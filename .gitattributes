@@ -1,0 +1,12 @@
+# .gitattributes
+
+# 모든 .js 파일은 LF로 유지
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+README.md text eol=lf
+
+# Windows에서 사용할 .bat 파일은 CRLF로 유지
+*.bat text eol=crlf
