@@ -12,7 +12,7 @@ export interface StoredGameResult {
   failedAttempts: number;
   avgReactionTime: number;  // 초
   skillScore: number;
-  //theme: String,                 // 테마값
+  //theme: String;                 // 테마값
   /* 반응속도 분산지표 고도화 작업용 - DB 생성시에는 필드 참고 미리 생성*/
   //reactionTimeDetails: number[]; // 개별 반응 시간들 (표준편차 재계산용)
   //stdDev: number;                // 표준편차

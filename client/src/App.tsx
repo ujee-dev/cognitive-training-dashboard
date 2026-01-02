@@ -5,6 +5,8 @@ import { Result } from './pages/Result';
 import { Performance } from './pages/Performance';
 import Header from './components/Header';
 
+import { TestJwt } from './pages/test/TestJwt';
+
 // UI 링크와 별도로 모든 페이지는 Route에 등록해야 화면이 보여짐
 export default function App() {
   return (
@@ -25,6 +27,7 @@ export default function App() {
               <Route path="/game" element={<Game />} />
               <Route path="/result" element={<Result />} />
               <Route path="/performance" element={<Performance />} />
+              <Route path="/test/testjwt" element={<TestJwt />} />
             </Routes>
           </div>
 

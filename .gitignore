@@ -1,35 +1,72 @@
-# Logs
-logs
+# --- [ 1. 공통 무시 항목 ] ---
+node_modules/
+dist/
+build/
+out/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- [ 2. 클라이언트 (Client) ] ---
+client/node_modules/
+client/dist/
+client/dist-ssr/
+client/coverage/
+client/.env
+client/.env.*
+# 라이브러리/프레임워크 설정 파일
+client/.temp/
+client/.tmp/
+
+ --- [ 3. 서버 (Server) ] ---
+server/node_modules/
+server/dist/
+server/coverage/
+server/.env
+server/.env.*
+# DB 및 런타임 데이터
+server/*.db
+server/*.sqlite
+server/pids
+server/*.pid
+server/*.seed
+server/*.pid.lock
+
+
+# --- [ 4. IDE 및 에디터 설정 ] ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.sw?
+
+# --- [ 5. 기타 임시 파일 ] ---
+.temp/
+.tmp/
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# --- [ 로그 및 테스트 ] ---
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+/.nyc_output
+/coverage
 
-# Dependencies
-node_modules
-
-# Build outputs
-dist
-dist-ssr
-build
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.production.local
-
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# --- [ 운영체제 및 범용 에디터 ] ---
 .DS_Store
+.project
+.settings/
+*.sln
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
-*.sw?
+
+# --- [ 로컬 전용 설정 파일 ] ---
+*.local
+.env.local
+.env.*.local
