@@ -2,22 +2,25 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtPayload } from '../auth/jwt-payload.interface';
+import { ValidatedUser, JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private readonly configService: ConfigService) {
     super({
+      // 헤더에서 Authorization: Bearer <token> 추출
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
+      ignoreExpiration: false, // 만료된 토큰은 거절
+      // getOrThrow를 사용해 설정값이 없으면 서버 시작 단계에서 에러를 내도록 합니다. (필수)
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
-  // 토큰 검증 성공 시 실행
-  validate(payload: JwtPayload): JwtPayload {
+  // Passport가 토큰을 해독한 후 자동으로 실행함
+  validate(payload: JwtPayload): ValidatedUser {
     // payload = { sub, email }
-    return payload;
+    // req.user에 이 객체가 들어갑니다.
+    return { userId: payload.sub, email: payload.email };
   }
 }
 

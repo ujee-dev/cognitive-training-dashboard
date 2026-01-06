@@ -8,6 +8,8 @@ import api from './axios';
 // 일부 필드 수정 = PATCH
 // 전체 갱신 = PUT
 
+export const logoutApi = () => api.post("/auth/logout");
+
 // 회원가입
 export async function signup(user: UserCredentials) {
   console.log(`/auth/signup`);
@@ -46,4 +48,10 @@ export async function getMyRecords(difficulty: string) {
   const res = await api.get(`/records/my/${difficulty}`);
   console.log('api.ts - my records', res.data);
   return res.data; // 에러 검사 후 데이터 반환
+}
+
+// 내 정보 가져오기 (토큰 검증용)
+export async function getMe() {
+  const res = await api.get("/auth/me");
+  return res.data; // { userId, email } 반환
 }

@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { User, UserSchema } from './user.schema'; // 유저 스키마 경로 확인
+import { User, UserSchema } from './schema/user.schema'; // 유저 스키마 경로 확인
 
 @Module({
   imports: [

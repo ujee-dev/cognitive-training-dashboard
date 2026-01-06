@@ -1,7 +1,13 @@
-import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  Matches,
+  MinLength,
+  IsNotEmpty,
+} from 'class-validator';
 
 export class SignupDto {
-  @IsEmail({}, { message: '유효한 이메일 형식이 아닙니다.' })
+  @IsEmail({}, { message: '올바른 이메일 형식이 아닙니다.' })
   email: string;
 
   @IsString()
@@ -10,4 +16,12 @@ export class SignupDto {
     message: '비밀번호는 영문과 숫자를 포함해야 합니다.',
   })
   password: string;
+
+  @IsString()
+  @IsNotEmpty({ message: '이름은 필수 입력 항목입니다.' })
+  name: string;
+
+  @IsString()
+  @IsNotEmpty({ message: '닉네임은 필수 입력 항목입니다.' })
+  nickname: string;
 }
