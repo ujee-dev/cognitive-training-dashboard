@@ -15,14 +15,14 @@ import { AccuracyTrendChart } from '../components/charts/AccuracyTrendChart';
 import { SkillScoreTrendChart } from '../components/charts/SkillScoreTrendChart';
 
 // stats UI
-import { RecentTimeline } from '../components/stats/RecentTimeline';
-import { AverageCompareCard } from '../components/stats/AverageCompareCard';
-import { ExtremeCard } from '../components/stats/ExtremeCard';
-import { ProgressBadge } from '../components/stats/ProgressBadge';
+import { RecentTimeline } from '../components/performance/RecentTimeline';
+import { AverageCompareCard } from '../components/performance/AverageCompareCard';
+import { ExtremeCard } from '../components/performance/ExtremeCard';
+import { ProgressBadge } from '../components/performance/ProgressBadge';
 
 // 공용 컴포넌트
-import CardBox from '../components/common/CardBox';
-import ItemDescription from '../components/common/ItemDescription';
+import CardBox from '../components/ui/CardBox';
+import ItemDescription from '../components/ui/ItemDescription';
 
 export function Performance() {
   /* --- 난이도 --- */

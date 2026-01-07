@@ -19,7 +19,7 @@ import { UsersModule } from '../users/users.module';
       // async를 빼고 화살표 함수 뒤의 중괄호를 소괄호로 바꾸거나 return을 명시합니다.
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
+        signOptions: { expiresIn: '15m' },
       }),
     }),
   ],

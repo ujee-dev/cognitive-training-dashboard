@@ -1,78 +1,91 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth"; // 커스텀 훅 가져오기
+import { useAuth } from "../../auth/useAuth";
+import { useLocation } from "react-router-dom";
 
 const Header: React.FC = () => {
-  // 전역 상태에서 인증 여부와 로그아웃 함수 가져오기
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout, user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false); // 모바일 메뉴 상태
 
-  const activeStyle = "text-yellow-400 visited:text-yellow-400 font-bold";
-  const inactiveStyle = "text-white hover:text-yellow-400 visited:text-white";
+  const location = useLocation();
+  
+  // 헤더를 숨길 경로 정의
+  const hideHeaderPaths = ["/login", "/signup"];
+  if (hideHeaderPaths.includes(location.pathname)) return null;
+
+  //console.log(user);
+
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `${
+    isActive ? "text-brand font-bold" : "text-surface-600"
+  } hover:text-brand-light transition-colors`;
 
   return (
-    <header className="bg-gray-800 p-4 fixed top-0 left-0 w-full z-10 shadow-md">
-      <nav className="max-w-4xl mx-auto">
-        <ul className="flex flex-row items-center space-x-4">
-          <li>
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) => (isActive ? activeStyle : inactiveStyle)}
-            >
-              CogniDash
-            </NavLink>
-          </li>
-          
-          <span className="text-gray-500">|</span>
+    <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 fixed top-0 left-0 w-full z-50 shadow-sm">
+      <nav className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        {/* 로고 */}
+        <NavLink to="/" className="text-2xl font-extrabold text-indigo-600 tracking-tight">
+          CogniDash
+        </NavLink>
 
-          <li>
-            <NavLink
-              to="/game"
-              className={({ isActive }) => (isActive ? activeStyle : inactiveStyle)}
-            >
-              게임
-            </NavLink>
-          </li>
-
-          {/* 1. 로그인했을 때만 '성과' 메뉴 노출 */}
-          {isAuthenticated && (
-            <>
-              <span className="text-gray-500">|</span>
-              <li>
-                <NavLink
-                  to="/performance"
-                  className={({ isActive }) => (isActive ? activeStyle : inactiveStyle)}
-                >
-                  성과
-                </NavLink>
-              </li>
-            </>
-          )}
-
-          <span className="text-gray-500">|</span>
-
-          {/* 2. 로그인 상태에 따라 '로그인' 또는 '로그아웃' 버튼 표시 */}
-          <li>
-            {!isAuthenticated ? (
-              <NavLink
-                to="/login"
-                className={({ isActive }) => (isActive ? activeStyle : inactiveStyle)}
-              >
-                로그인
-              </NavLink>
+        {/* 햄버거 버튼 (색상 대비 강화) */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             ) : (
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-300 text-sm">내 정보</span>
-                <button
-                  onClick={logout}
-                  className="text-white hover:bg-blue-400 text-sm font-medium focus:outline-none transition-colors bg-yellow-400"
-                >
-                  로그아웃
-                </button>
-              </div>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
             )}
-          </li>
-        </ul>
+          </svg>
+        </button>
+
+        {/* 메뉴 영역 */}
+        <div className={`${
+            isOpen ? "absolute top-16 left-0 w-full bg-white border-b border-slate-200 p-4 flex flex-col shadow-lg" : "hidden"
+          } md:static md:flex md:w-auto md:flex-row md:items-center md:border-none md:bg-transparent md:p-0 md:shadow-none gap-6`}
+        >
+          <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+            <li><NavLink to="/game" className={getNavLinkClass} onClick={() => setIsOpen(false)}>게임</NavLink></li>
+            {isAuthenticated && (
+              <li><NavLink to="/performance" className={getNavLinkClass} onClick={() => setIsOpen(false)}>성과</NavLink></li>
+            )}
+            
+            <div className="hidden md:block w-px h-4 bg-slate-300 mx-2" />
+
+            {!isLoading && (
+              <li>
+                {!isAuthenticated ? (
+                  <NavLink 
+                    to="/login" 
+                    className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all inline-block"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    로그인
+                  </NavLink>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2 bg-slate-100 px-3 py-1 rounded-full">
+                      {user?.profileImage ? (
+                        <img src={user.profileImage} alt="profile" />
+                      ) : (
+                        user?.nickname[0] // 이름의 첫 글자만 표시 (예: '홍')
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { logout(); setIsOpen(false); }}
+                      className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all inline-block"
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                )}
+              </li>
+            )}
+          </ul>
+        </div>
       </nav>
     </header>
   );

@@ -1,96 +1,151 @@
-import axios,
-{ AxiosError,
-  type InternalAxiosRequestConfig,
-  type AxiosResponse
-} from 'axios';
+/** =========================
+ 1. axios.ts가 해야 할 일
+  - 토큰 자동 첨부
+  - Access Token 만료 → refresh 시도
+  - refresh 실패 → “세션 만료 신호” 발생
+  
+ 2. axios.ts가 하면 안 되는 일
+  - 비즈니스 로직 판단
+  - 복잡한 상태 관리
+  - 중복된 refresh 전략
+  - 여러 UX 전략 혼합
+=============================*/
+import axios, { AxiosError } from "axios";
+import type { InternalAxiosRequestConfig, AxiosResponse } from "axios";
+import { ENDPOINTS } from "./api";
 
-// 서버 응답 데이터 타입을 위한 인터페이스 정의 (any 제거)
-interface ApiErrorResponse {
+import {
+  showSessionExpired,
+  showForbidden,
+  showServerError,
+  showConflict,
+} from "../ui/toast";
+
+interface ErrorResponse {
   message?: string | string[];
 }
 
 const api = axios.create({
-  // baseURL: process.env.REACT_APP_API_URL,
-  // Vite를 사용하는 경우: Vite는 process.env를 사용하지 않습니다.
-  // 대신 **import.meta.env**를 사용하며,
-  // 타입 정의를 위해 vite-env.d.ts 파일이 필요
   baseURL: import.meta.env.VITE_APP_API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Refresh Token(쿠키) 전송을 위해 필수
+  withCredentials: true, // refreshToken cookie 포함
 });
 
-// 요청 인터셉터: 모든 요청에 Access Token 주입
+/* =========================
+   Refresh 제어 상태
+========================= */
+let isRefreshing = false;
+
+// 대기열 타입 정의 (토큰을 인자로 받는 함수 배열)
+type SubscriberCallback = (token: string) => void;
+let subscribers: SubscriberCallback[] = [];
+
+// 대기열 처리 함수
+function notifySubscribers(token: string) {
+  subscribers.forEach((callback) => callback(token));
+  subscribers = [];
+}
+
+/* =========================
+   Request Interceptor
+========================= */
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    console.log('현재 로컬스토리지 토큰:', token); // 1. 토큰 존재 여부 확인
-
+    const token = localStorage.getItem("accessToken");
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('⚠️ 요청에 포함할 토큰이 없습니다!'); // 2. 토큰 없을 때 경고
+      console.warn("요청에 포함할 토큰이 없습니다!");
     }
 
-    console.log('최종 요청 헤더:', config.headers); // 3. 헤더 전체 확인
     return config;
   },
-  (error)  => Promise.reject(error)
+  (error) => Promise.reject(error)
 );
 
-// 응답 인터셉터: 에러 핸들링 및 토큰 만료 처리
+/* =========================
+   Response Interceptor
+========================= */
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: AxiosError<ApiErrorResponse>) => {
-    // _retry 속성을 포함하도록 타입 확장
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    };
-
+  (res: AxiosResponse) => res,
+  async (error: AxiosError<ErrorResponse>) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    
     const isAuthEndpoint =
-      originalRequest.url?.includes("/auth/login") ||
-      originalRequest.url?.includes("/auth/logout");
+      originalRequest.url?.includes(ENDPOINTS.LOGIN) ||
+      originalRequest.url?.includes(ENDPOINTS.LOGOUT);
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    const status = error.response?.status;
+
+    /* ===== 401: Access Token 만료 ===== */
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true; // 무한 루프 방지용 플래그
 
-      // [Case 1] 401 에러(인증 만료) 발생 시 토큰 갱신 시도
+      // 이미 갱신 중이라면 대기열에 추가
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribers.push((token: string) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
+
       try {
-        // NestJS의 Refresh 엔드포인트 호출
-        // 주의: 이 요청은 'api' 인스턴스가 아닌 'axios' 기본 인스턴스를 사용해야 인터셉터 중복을 피합니다.
+        // [중요] await를 반드시 확인하세요. 
+        // 인터셉터 중복 방지를 위해 기본 axios 인스턴스를 사용합니다.
         const response = await axios.post<{ accessToken: string }>(
-          `${import.meta.env.VITE_APP_API_URL}/auth/refresh`, // 백엔드
+          `${import.meta.env.VITE_APP_API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        const { accessToken } = response.data;
+        const newAccessToken = response.data.accessToken;
 
-        // 새로운 토큰 저장 후 기존 요청 헤더 교체
-        localStorage.setItem("accessToken", accessToken);
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        // 새로운 토큰 저장
+        localStorage.setItem("accessToken", newAccessToken);
 
-        // 원래 실패했던 요청 재시도
+        isRefreshing = false;
+
+        // 대기 중이던 요청들에게 새 토큰 전달하며 실행
+        notifySubscribers(newAccessToken);
+
+        // 현재 실패했던 요청 재시도
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
         return api(originalRequest);
-      } catch (refreshError) {
-        // Refresh Token도 만료된 경우: 로그아웃 처리 및 페이지 이동
+      } catch {
+        isRefreshing = false;
+        subscribers = []; // 대기열 비움
+
+        // Refresh 실패 시 세션 종료
+        showSessionExpired();
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
-        return Promise.reject(refreshError);
+        window.location.href = ENDPOINTS.LOGIN;
+
+        return Promise.reject(error);
       }
     }
 
-    // [Case 2] 일반적인 에러 메시지 처리 (NestJS에서 보낸 메시지 추출)
-    const serverMessage = error.response?.data?.message;
-    
-    // 에러 객체를 수정해서 다시 던짐
-    if (serverMessage) {
-      error.message = Array.isArray(serverMessage) 
-        ? serverMessage.join(' / ') 
-        : serverMessage;
+    /* ===== 그 외 에러 UX ===== */
+    if (status === 403) {
+      showForbidden();
     }
-    
+
+    if (status === 409) {
+      const msg = error.response?.data?.message;
+      showConflict(Array.isArray(msg) ? msg.join(" / ") : msg);
+    }
+
+    if (status && status >= 500) {
+      showServerError();
+    }
+
     return Promise.reject(error);
   }
 );

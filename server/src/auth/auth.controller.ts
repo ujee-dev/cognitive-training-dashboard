@@ -8,6 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UsersService } from 'src/users/users.service';
 import { AuthGuard } from '@nestjs/passport';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -24,7 +25,10 @@ import type {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   /**
    * ✅ 회원가입
@@ -101,8 +105,15 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt')) // Access Token이 유효해야만 접근 가능
-  getMe(@Req() req: Request & { user: ValidatedUser }) {
-    // JwtStrategy의 validate()에서 반환한 { userId, email }이 req.user에 들어있습니다.
-    return req.user;
+  async getMe(@Req() req: Request & { user: ValidatedUser }) {
+    const me = await this.usersService.findById(req.user.userId);
+
+    return {
+      id: me?._id,
+      email: me?.email,
+      name: me?.name,
+      nickname: me?.nickname,
+      profileImage: me?.profileImage,
+    };
   }
 }

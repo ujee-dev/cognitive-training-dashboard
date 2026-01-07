@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import type { Difficulty } from '../config/gameConfig';
 
-import CardBox from '../components/common/CardBox';
+import CardBox from '../components/ui/CardBox';
 
 export function Home() {
 
@@ -11,7 +11,6 @@ export function Home() {
 
   return (
     <div className='w-full space-y-10 justify-center items-center'>
-      <h1>CogniDash</h1>
       <CardBox
         title="Cognitive Training Dashboard : 인지 훈련"
         className="bg-gray-700"

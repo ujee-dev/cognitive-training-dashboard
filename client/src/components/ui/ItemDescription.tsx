@@ -1,5 +1,4 @@
 // ItemDescription.tsx
-import { ReactNode } from "react";
 
 interface ItemDescriptionProps {
   description1: string;

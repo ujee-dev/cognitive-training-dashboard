@@ -9,8 +9,8 @@ import { AccuracyByDifficultyChart } from '../components/charts/AccuracyByDiffic
 import { DurationByDifficultyChart } from '../components/charts/DurationByDifficultyChart';
 import { ReactionByDifficultyChart } from '../components/charts/ReactionByDifficultyChart';
 
-import CardBox from '../components/common/CardBox';
-import StatItem from "../components/stats/StatItem";
+import CardBox from '../components/ui/CardBox';
+import StatItem from "../components/performance/StatItem";
 
 export function Result() {
   const location = useLocation();
@@ -37,7 +37,6 @@ export function Result() {
   }
 
   const difficultyLabel = DIFFICULTY_LABEL[result.difficulty];
-  console.log('호출 카운트 테스트');
 
   return (
     <>

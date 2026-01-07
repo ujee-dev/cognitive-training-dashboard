@@ -4,14 +4,14 @@ import { useCardLogic } from '../hooks/useCardLogic';
 import GameCardBoard from '../components/game/GameCardBoard';
 import { GameCardHeader } from '../components/game/GameCardHeader';
 import type { Difficulty } from '../config/gameConfig';
-import { PreviewProgress } from '../components/stats/PreviewProgress';
+import { PreviewProgress } from '../components/game/PreviewProgress';
 import { GAME_CARD_CONFIG } from '../config/gameConfig';
 import type { StoredGameResult } from '../types/storage';
 import { calcAverage } from '../utils/calcAverage';
 import { calcSkillScore } from '../utils/skillScore';
 import { saveResult } from '../utils/storage';
 
-import CardBox from '../components/common/CardBox';
+import CardBox from '../components/ui/CardBox';
 
 interface Props {
   difficulty: Difficulty;
