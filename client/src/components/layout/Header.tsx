@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { useLocation } from "react-router-dom";
+import { useAuthActions } from "../../auth/useAuthActions";
+
+// "Auth 초기화 완료된 상태에서만 렌더링됨"
 
 const Header: React.FC = () => {
-  const { isAuthenticated, isLoading, logout, user } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useAuthActions();
+  
   const [isOpen, setIsOpen] = useState(false); // 모바일 메뉴 상태
 
   const location = useLocation();
@@ -12,8 +17,6 @@ const Header: React.FC = () => {
   // 헤더를 숨길 경로 정의
   const hideHeaderPaths = ["/login", "/signup"];
   if (hideHeaderPaths.includes(location.pathname)) return null;
-
-  //console.log(user);
 
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) =>
   `${
@@ -49,15 +52,13 @@ const Header: React.FC = () => {
         >
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
             <li><NavLink to="/game" className={getNavLinkClass} onClick={() => setIsOpen(false)}>게임</NavLink></li>
-            {isAuthenticated && (
+            {user && (
               <li><NavLink to="/performance" className={getNavLinkClass} onClick={() => setIsOpen(false)}>성과</NavLink></li>
             )}
             
             <div className="hidden md:block w-px h-4 bg-slate-300 mx-2" />
-
-            {!isLoading && (
               <li>
-                {!isAuthenticated ? (
+                {!user ? (
                   <NavLink 
                     to="/login" 
                     className="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-indigo-700 transition-all inline-block"
@@ -83,7 +84,6 @@ const Header: React.FC = () => {
                   </div>
                 )}
               </li>
-            )}
           </ul>
         </div>
       </nav>

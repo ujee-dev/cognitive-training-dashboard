@@ -1,22 +1,23 @@
 // ui/toast.ts : 컴포넌트가 아니라 "UI를 호출하는 도구" = 순수 함수
 import { toast } from "react-hot-toast";
 
-let hasShown = false;
+let hasShownSessionExpired = false;
 
 /**
  * 세션 만료 (401 refresh 실패) - axios interceptor 전용
  */
 export const showSessionExpired = () => {
-  // refresh 실패가 **여러 요청에서 동시에 발생** 가능 = toast 중복 방지 (1 번만 노출)
-  if (hasShown) return;
+  // refresh 실패가 **여러 요청에서 동시에 발생** 가능
+  // = toast 중복 방지 (1 번만 노출)
+  if (hasShownSessionExpired) return;
 
-  hasShown = true;
+  hasShownSessionExpired = true;
 
   toast.error("세션이 만료되었습니다. 다시 로그인해 주세요.");
 
   // UX 안정화용 reset (페이지 이동 후 다시 사용 가능)
   setTimeout(() => {
-    hasShown = false;
+    hasShownSessionExpired = false;
   }, 3000);
 };
 
@@ -28,10 +29,10 @@ export const showSuccess = (message: string) => {
 };
 
 export const showUnauthorized = () => {
-  toast.error("로그인이 필요합니다.");
+  toast.error("접근 권한이 없습니다. 로그인이 필요합니다.");
 };
 
-export const showError = (message?: string | string[]) => {
+export const showValidationError = (message?: string | string[]) => {
   if (!message) {
     toast.error("요청 처리 중 오류가 발생했습니다.");
     return;

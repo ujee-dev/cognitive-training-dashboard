@@ -9,6 +9,7 @@ Thumbs.db
 
 # --- [ 2. 클라이언트 (Client) ] ---
 client/node_modules/
+client/src/pages/ForbiddenPage.tsx
 client/dist/
 client/dist-ssr/
 client/coverage/
@@ -17,9 +18,13 @@ client/.env.*
 # 라이브러리/프레임워크 설정 파일
 client/.temp/
 client/.tmp/
+# 클라이언트 테스트: Playwright HTML 보고서 / 스크린샷 / trace
+client/test-results/
+client/playwright-report/
 
  --- [ 3. 서버 (Server) ] ---
 server/node_modules/
+server/src/test/
 server/dist/
 server/coverage/
 server/.env

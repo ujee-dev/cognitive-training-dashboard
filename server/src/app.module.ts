@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RecordsModule } from './records/records.module';
+//import { TestController } from './test/test.controller';
 
 @Module({
   imports: [
@@ -42,5 +43,6 @@ import { RecordsModule } from './records/records.module';
     UsersModule, // 여기가 빠져있으면 UsersController가 작동하지 않습니다.
     RecordsModule,
   ],
+  //controllers: [TestController], // 권한 테스트용 등록
 })
 export class AppModule {}

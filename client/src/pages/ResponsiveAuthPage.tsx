@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
-
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from '../auth/useAuth';
-import { authApi } from '../api/api';
-import Spinner from "../components/ui/Spinner";
-import axios from "axios";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import axios from "axios";
+
+import { authApi } from '../api/api';
+import { useAuth } from '../auth/useAuth';
+import { useAuthActions } from "../auth/useAuthActions";
+import { authRedirect } from "../auth/authRedirect";
 
 export function ResponsiveAuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { isAuthenticated, isLoading , login } = useAuth();
+  const { user } = useAuth(); // 읽기 전용
+  const { login } = useAuthActions(); // 행동
+
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -20,16 +22,16 @@ export function ResponsiveAuthPage() {
 
   // [튕겨내기 로직] 이미 로그인했다면 홈으로 전송
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(from, { replace: true });
+    if (user) {
+      navigate(from, { replace: true }); // 이곳은 UX가 아님, 안정성 로직
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [user, navigate, from]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
     
     try {
-      const data = await authApi.loginApi({ email, password });
+      const data = await authApi.login({ email, password });
 
       if (!data.accessToken) {
         throw new Error("로그인 응답에 토큰이 없습니다.");
@@ -38,9 +40,10 @@ export function ResponsiveAuthPage() {
       // accessToken을 반드시 전달
       login(data.accessToken);
 
-      console.log("로그인 성공");
-      // 로그인 실패는 **로컬 UX** → axios interceptor로 보내지 않음
+      authRedirect.afterLogin(navigate, location);
     } catch (err: unknown) {
+      // interceptor / refresh / authEventBus와 **절대 섞이면 안 됨**
+      // "handleApiError 사용하지 않음"
       if (axios.isAxiosError(err)) {
         const serverMessage = err.response?.data?.message;
         const msg = Array.isArray(serverMessage)
@@ -54,9 +57,8 @@ export function ResponsiveAuthPage() {
     }
   };
 
-  // 순서 중요: 암기! - 로그인 상태일 때는 화면을 잠시 숨김 (깜빡임 방지)
-  if (isLoading) return <Spinner />;
-  if (isAuthenticated) return null;
+  // 로그인 상태일 때는 화면을 잠시 숨김
+  if (user) return null;
 
   return (
     <div className="min-h-screen bg-surface-50 flex flex-col justify-center items-center p-4">

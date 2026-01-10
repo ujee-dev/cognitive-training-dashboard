@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 
 import { authApi } from "../api/api";
-import { showSuccess, showError } from "../ui/toast"; // 성공 toast만 사용
+import { showSuccess } from "../ui/toast"; // 성공 toast만 사용
+import { handleApiError } from "../api/handleApiError";
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -32,14 +32,9 @@ export function SignupPage() {
 
       // 성공 UX만 여기서 처리
       showSuccess("회원가입이 완료되었습니다. 로그인해 주세요.");
-      navigate("/login");
+      navigate("/login"); // 인증 흐름이 아니므로 지금은 현재 코드 유지
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message;
-        showError(message);
-      } else {
-        showError("알 수 없는 오류가 발생했습니다.");
-      }
+      handleApiError(error);
     }
   };
 

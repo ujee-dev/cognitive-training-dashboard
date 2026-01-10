@@ -8,9 +8,10 @@ export interface UserInfo {
 }
 
 export interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
   user: UserInfo | null;
-  login: (accessToken: string) => void;
-  logout: () => Promise<void>;
+  isLoading: boolean;
+
+  // 내부 상태 제어용 (actions에서만 사용: 일반 컴포넌트에서는 쓰지 않음)
+  setUser: (user: UserInfo | null) => void;
+  setIsLoading: (loading: boolean) => void;
 }
