@@ -10,19 +10,21 @@ import { findExtremes } from '../utils/findExtremes';
 import { judgeProgress } from '../utils/judgeProgress';
 
 // chart
-import { ReactionTrendChart } from '../components/charts/ReactionTrendChart';
-import { AccuracyTrendChart } from '../components/charts/AccuracyTrendChart';
-import { SkillScoreTrendChart } from '../components/charts/SkillScoreTrendChart';
+import { ReactionTrendChart } from '../ui/charts/ReactionTrendChart';
+import { AccuracyTrendChart } from '../ui/charts/AccuracyTrendChart';
+import { SkillScoreTrendChart } from '../ui/charts/SkillScoreTrendChart';
 
 // stats UI
-import { RecentTimeline } from '../components/performance/RecentTimeline';
-import { AverageCompareCard } from '../components/performance/AverageCompareCard';
-import { ExtremeCard } from '../components/performance/ExtremeCard';
-import { ProgressBadge } from '../components/performance/ProgressBadge';
+import { RecentTimeline } from '../ui/performance/RecentTimeline';
+import { AverageCompareCard } from '../ui/performance/AverageCompareCard';
+import { ProgressBadge } from '../ui/performance/ProgressBadge';
 
 // 공용 컴포넌트
-import CardBox from '../components/ui/CardBox';
-import ItemDescription from '../components/ui/ItemDescription';
+import PageContainer from '../components/layout/PageContainer';
+import Card from '../components/ui/Card';
+import CardSub from '../components/ui/CardSub';
+import DescriptionRow from '../components/ui/DescriptionRow';
+import { ExtremeCard } from '../ui/performance/ExtremeCard';
 
 export function Performance() {
   /* --- 난이도 --- */
@@ -106,84 +108,75 @@ export function Performance() {
 
   /* --- UI --- */
   return (
-    <>
-      <div className='space-y-5 items-center'>
-      <CardBox
-        title="성과 분석 안내"
-        className="bg-gray-600"
-        titleClassName='text-lg tracking-normal'
-        titleColor="LightSalmon"
-      >
-        <div className="leading-relaxed tracking-widest text-sm text-white/60">
-          다음은 "유효 게임" 진행에 대한 통계 입니다. 
-          ( 진행하지 않고 자동 시간 종료 또는 중단한 게임은 제외됩니다. )<br />
-          <span className='text-white'>" 데이터가 적으면 분석이 정확하지 않을 수 있습니다. "</span><br />
-        </div>
-      </CardBox>
+    <PageContainer>
+      <CardSub title="성과 분석 안내" variant='border'>
+        다음은 "유효 게임" 진행에 대한 통계 입니다.
+        ( 진행하지 않고 자동 시간 종료 또는 중단한 게임은 제외됩니다. )<br />
+        " <strong>데이터가 적으면 분석이 정확하지 않을 수 있습니다.</strong> "
+      </CardSub>
 
       {/* 난이도 선택 */}
-      <CardBox title="난이도 선택: ">
+      <div className="px-4 space-x-5 text-sm">
+        <span className='font-semibold'>난이도 선택를 선택하세요. </span>{" "}
         <select
           value={difficulty}
           onChange={e => setDifficulty(e.target.value as Difficulty)}
-          className="border px-2 py-1 rounded text-sm mx-auto min-w-full">
+          className="border px-2 py-1 rounded text-sm mx-auto">
             <option value="easy">쉬움</option>
             <option value="normal">보통</option>
             <option value="hard">어려움</option>
         </select>
-      </CardBox>
+      </div>
 
-      <CardBox title="실력 향상 배지">
+      <Card title="실력 향상 배지" variant='brandDark' titleVariant='titleBrand'>
         <ProgressBadge status={progress.status} message={progress.message} color={progress.color} />
-      </CardBox>
+      </Card>
 
-      <CardBox title="최근 10 회 게임 기록">
-        <RecentTimeline results={recentResults} />
-      </CardBox>
+      <Card title="최근 10 회 게임 기록" variant="default" titleVariant='base'>
+        <RecentTimeline results={recentResults}/>
+      </Card>
 
-      <CardBox title="최근 10 회 집중도 추이">
+      <Card title="최근 10 회 집중도 추이" variant="default" titleVariant='base'>
         <SkillScoreTrendChart data={skillScoreTrendData} overallAvg={overallSkillScore} />
       { (skillScoreTrendData.length > 0) &&
-        <ItemDescription
-          description1="이동 평균선 = 기준선 최근 5개의 평균 값" isRightAligned1={false}
-          description2="실제 값" isRightAligned2={true}
+        <DescriptionRow
+          left="이동 평균선 = 기준선 최근 5개의 평균 값"
+          right="실제 값"
         />
       }
-      </CardBox>
+      </Card>
 
-      <CardBox title="최근 10 회 반응 속도 추이">
+      <Card title="최근 10 회 반응 속도 추이" variant="default" titleVariant='base'>
         <ReactionTrendChart data={trendData} overallAvg={overallReactionTime} />
       { (trendData.length > 0) &&
-        <ItemDescription
-          description1="이동 평균선 = 기준선 최근 5개의 평균 값" isRightAligned1={false}
-          description2="실제 값" isRightAligned2={true}
+        <DescriptionRow
+          left="이동 평균선 = 기준선 최근 5개의 평균 값"
+          right="실제 값"
         />
       }
-      </CardBox>
+      </Card>
 
-      <CardBox title="최근 10 회 정확도 추이">
+      <Card title="최근 10 회 정확도 추이" variant="default" titleVariant='base'>
         <AccuracyTrendChart data={accuracyTrendData} overallAvg={overallAccuracy} />
       { (accuracyTrendData.length > 0) &&
-        <ItemDescription
-          description1="이동 평균선 = 기준선 최근 5개의 평균 값" isRightAligned1={false}
-          description2="실제 값" isRightAligned2={true}
+        <DescriptionRow
+          left="이동 평균선 = 기준선 최근 5개의 평균 값"
+          right="실제 값"
         />
       }
-      </CardBox>
+      </Card>
 
-      <CardBox title="반응 속도 평균 비교">
+      <Card title="반응 속도 평균 비교" variant="brandDark" titleVariant='titleBrand'>
         <AverageCompareCard recent={recentReactionTime} overall={overallReactionTime} />
-      </CardBox>
+      </Card>
 
-      <CardBox title="기록 하이라이트">
+      <Card title="기록 하이라이트" variant="brandDark" titleVariant='titleBrand'>
         {!extremes
-          ? <div className='flex justify-between text-sm text-white/80'>
-              <p>데이터가 없습니다.</p>
-            </div>
-          : <ExtremeCard best={extremes.best} worst={extremes.worst}
-        />}
-      </CardBox>
-      </div> <br />
-    </>
+          ? <div className='text-sm'>데이터가 없습니다.</div>
+          : <ExtremeCard best={extremes.best} worst={extremes.worst} />
+        }
+      </Card>
+      <div className='h-12'/>
+    </PageContainer>
   );
 }

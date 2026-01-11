@@ -2,7 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import type { Difficulty } from '../config/gameConfig';
 
-import CardBox from '../components/ui/CardBox';
+import PageContainer from "../components/layout/PageContainer";
+import Card from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
 
 export function Home() {
 
@@ -10,40 +12,45 @@ export function Home() {
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
 
   return (
-    <div className='w-full space-y-10 justify-center items-center'>
-      <CardBox
-        title="Cognitive Training Dashboard : 인지 훈련"
-        className="bg-gray-700"
-        titleClassName='text-lg tracking-normal'
-        titleColor="LightSalmon"
-      >
-        <div className="text-justify tracking-widest text-sm text-white/60">
-          <span className='font-semibold text-white'>카드 매칭 게임</span>
-          을 통해 " <span className='font-semibold text-white'>반응속도</span>
-           ", " <span className='font-semibold text-white'>정확도</span> "를 측정하고,
-          이를 결합한 <span className='font-semibold text-white'>** 집중도 지표 **</span> 를 설계한 React 기반 프로젝트입니다.
-          게임 결과를 <span className='font-semibold text-white'>난이도별·시간 흐름별로 분석</span>하여
-          <span className='font-semibold text-white'> 시각화</span>로 보여드립니다.
-        </div>
-      </CardBox>
-      <div>
-        <span className='font-bold ml-5'>▶ 난이도 선택 :</span>
+    <PageContainer>
+      <Card title="Cognitive Training Dashboard" variant="default">
+        <p className="text-sm leading-relaxed">
+          카드 매칭 게임을 통해 
+          <strong className="text-orange-400">{" "}반응속도</strong>와
+          <strong className="text-orange-400">{" "}정확도</strong>를 측정하고, 이를 결합한
+          <strong className="text-orange-400">{" "}집중도 지표</strong>를 설계한
+          {" "}"React 기반"{" "}프로젝트입니다. 게임 결과를
+          <strong className="text-orange-400">{" "}난이도별·시간 흐름별로 분석</strong>하여
+          <strong className="text-orange-400">{" "}시각화</strong>로 보여드립니다.
+        </p>
+      </Card>
+
+      {/* 컨트롤 박스 */}
+      <div className="flex items-center gap-2 text-sm">
+        <span className='ml-7 font-semibold'>난이도 선택 - </span>
+
         <select
           value={difficulty}
-          className='font-bold ml-5'
+          className="bg-surface-600 border-surface-900 rounded
+           text-white px-3 py-1
+           focus:outline-none focus:ring-2 focus:ring-surface-600"
           onChange={e => setDifficulty(e.target.value as Difficulty)}
         >
           <option value="easy">쉬움</option>
           <option value="normal">보통</option>
           <option value="hard">어려움</option>
         </select>
-        <button
-          className='bg-blue-100 font-bold ml-5'
+        {/* 게임 시작 버튼 */}
+        <Button
+          variant="primary"
+          size="sm"
+          className='ml-5 max-w-60 w-auto'
           onClick={() => navigate('/game', { state: { difficulty } })}
         >
           게임 시작
-        </button>
+        </Button>
       </div>
-    </div>
+    </PageContainer>
+
   );
 }

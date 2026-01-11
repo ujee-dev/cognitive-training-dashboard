@@ -38,6 +38,7 @@ export function useCardLogic(difficulty: Difficulty) {
   const [attempts, setAttempts] = useState(0);
   const [correctMatches, setCorrectMatches] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [ctlPlayBtn, setPlayBtn] = useState(false);
 
   useEffect(() => {
     if (status !== 'preview') return;
@@ -79,8 +80,12 @@ export function useCardLogic(difficulty: Difficulty) {
     if (!card || card.isFlipped || card.isMatched) return;
 
     timer.start();
+    if(!ctlPlayBtn) setPlayBtn(true);
+    
     // [1] 두 번째 카드 클릭 시에만 반응 시간 기록
-    if (flippedRef.current.length > 0) timer.record();
+    if (flippedRef.current.length > 0) {
+      timer.record();
+    }
 
     // [2] 모든 카드 클릭 시 마지막 액션 시간을 업데이트 (반드시 record() 호출 후에 와야 함)
     timer.updateLastAction();
@@ -159,5 +164,6 @@ export function useCardLogic(difficulty: Difficulty) {
     getResult,
     status,
     previewLeft,
+    ctlPlayBtn, // 플레이버튼 (시작,정지) 컨트롤
   };
 }

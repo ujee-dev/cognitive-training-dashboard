@@ -11,7 +11,8 @@ import { calcAverage } from '../utils/calcAverage';
 import { calcSkillScore } from '../utils/skillScore';
 import { saveResult } from '../utils/storage';
 
-import CardBox from '../components/ui/CardBox';
+import Card from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 interface Props {
   difficulty: Difficulty;
@@ -59,7 +60,8 @@ export function GameCore({ difficulty, onReset }: Props) {
       navigate('/result', { 
         state: { 
           id: null, 
-          message: '유효하지 않은 게임입니다. 결과를 확인할 수 없습니다.' 
+          message1: '유효하지 않은 게임입니다.',
+          message2: '확인할 수 있는 게임 결과가 없습니다.'
         }, 
         replace: true 
       });
@@ -67,8 +69,8 @@ export function GameCore({ difficulty, onReset }: Props) {
   }, [finished, navigate]);
 
   return (
-    <> <div className="space-y-5">
-      <CardBox>
+    <>
+      <Card variant="leafGreen">
         <GameCardHeader
           difficulty={difficulty}
           attempts={game.attempts}
@@ -78,7 +80,7 @@ export function GameCore({ difficulty, onReset }: Props) {
           status={game.status}
           previewLeft={game.previewLeft}
         />
-      </CardBox>
+      </Card>
 
       {game.status === 'preview' && (
           <PreviewProgress
@@ -94,21 +96,28 @@ export function GameCore({ difficulty, onReset }: Props) {
 
       <div
         className="flex flex-col-2 gap-4 items-center justify-center">
-        <button
-          className="bg-blue-100 font-bold ml-5"
-          onClick={game.togglePause}
-        >
-          {game.isRunning ? '정지' : '시작'}
-        </button>
+        
+        {game.ctlPlayBtn && (
+          <Button
+            variant="primary"
+            size="sm"
+            className='ml-5 w-40'
+            onClick={game.togglePause}
+          >
+            {game.isRunning ? '정지 ||' : '시작 ▶'}
+          </Button>
+        )}
 
-        <button
-          className="bg-red-100 font-bold ml-5 hover:border-red-500"
+        <Button
+          variant="danger"
+          size="sm"
+          className='ml-5 w-40'
           onClick={onReset}
         >
           초기화
-        </button>
+        </Button>
       </div>
       <br/>
-    </div></>
+    </>
   );
 }

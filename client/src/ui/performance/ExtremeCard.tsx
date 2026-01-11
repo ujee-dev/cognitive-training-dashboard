@@ -7,7 +7,7 @@ type Props = {
 
 export function ExtremeCard({ best, worst }: Props) {
   return (
-    <div className='flex justify-between text-sm text-white/80'>
+    <div className='flex justify-between font-semibold text-sm tracking-widest'>
       {/* 기록 하이라이트 */}
       <p>🏆 최고: {best.avgReactionTime} 초</p>
       <p>😵 최저: {worst.avgReactionTime} 초</p>

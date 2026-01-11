@@ -1,9 +1,10 @@
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from "react-hot-toast";
 
+import AppLayout from "./components/layout/AppLayout";
+
 import { AuthProvider } from "./auth/AuthProvider";
 import AppRouter from "./routes/AppRouter";
-import Header from './components/layout/Header';
 import { AuthInitializer } from './auth/AuthInitializer';
 import { useAuthFailureHandler } from './auth/useAuthFailureHandler';
 import { useAuth } from './auth/useAuth';
@@ -44,16 +45,11 @@ export default function App() {
         {/* 전역 Auth 초기화 Spinner */}
         <AuthBootstrap />
 
-        {/* 최상위 컨테이너 */}
-        <div className="min-h-screen w-full flex flex-col bg-gray-50">
-          {/* 헤더 */}
-          <Header />
-          <main className="flex-1 pt-20 px-4">
-            <div className="max-w-4xl mx-auto w-full">
-              <AppRouter />
-            </div>
-          </main>
-        </div>
+        {/* 재사용 가능한 레이아웃 */}
+        <AppLayout>
+          <AppRouter />
+        </AppLayout>
+
       </AuthProvider>
     </BrowserRouter>
   );

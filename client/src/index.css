@@ -2,11 +2,11 @@
 	@tailwind components;
 	@tailwind utilities;
 
-
 /* 추가 작업 */
 /* @tailwind 3줄 추가, body, root */
 @layer base {
   body {
+    @apply tracking-base;
     font-family: Pretendard, sans-serif;
   }
 }

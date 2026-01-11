@@ -14,17 +14,17 @@ export default function GameCard({ cards, onCardClick }: Props) {
   }
 
   return (
-    <div className="w-full h-full grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       {cards.map(card => (
         <button
           key={card.id}
-          className="w-full h-full p-0 border-0"
+          className="p-0 border-0"
           onClick={() => onCardClick(card.id)}
         >
           <img
             src={card.isFlipped || card.isMatched ? card.image : backImage}
             alt="card"
-            className="w-full h-full bg-[#ffffff]"
+            className="bg-[#ffffff]"
           />
         </button>
       ))}

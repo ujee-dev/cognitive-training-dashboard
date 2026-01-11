@@ -2,19 +2,21 @@ interface StatItemProps {
   label: string;
   value: string | number;
   unit?: string;
+  textColor?: string;
 }
 
 export default function StatItem({
   label,
   value,
   unit,
+  textColor,
 }: StatItemProps) {
   return (
-    <div className="flex justify-between text-sm text-white/80">
+    <div className={`flex justify-between ${textColor}`}>
       <span>{label}</span>
-      <span className="font-semibold text-white">
+      <span className="font-semibold">
         {value}
-        {unit && <span className="ml-1 text-xs tracking-widest text-white/60">{unit}</span>}
+        {unit && <span className="ml-1 text-xs tracking-widest">{unit}</span>}
       </span>
     </div>
   );
