@@ -25,6 +25,7 @@ client/playwright-report/
  --- [ 3. 서버 (Server) ] ---
 server/node_modules/
 server/src/test/
+server/uploads/
 server/dist/
 server/coverage/
 server/.env
