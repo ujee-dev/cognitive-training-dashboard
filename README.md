@@ -16,7 +16,12 @@
 ## 프로젝트 개요
 
 - **Frontend**: 게임 UI, 사용자 상호작용, 데이터 시각화
-- **Backend**: 인증, (예정: 사용자 관리, 기록 저장, 분석 로직)
+- **Backend**:
+
+  - 인증
+  - 사용자 관리 (정보 수정, 비번 변경, 회원 탈퇴: 비번 재확인, 세션 무효화)
+  - 작업 예정: 기록 저장, 분석 로직
+
 - **핵심 주제**
 
   - JWT 인증 구조 설계
@@ -36,7 +41,7 @@
 
 ### Backend (`server/`)
 
-- Node.js(22.19.3)
+- Node.js(22.19.6), Nest.js(11.0.4)
 - MongoDB (Mongoose)
 - Passport (JWT / JWT-Refresh Strategy)
 - bcrypt (비밀번호 & 토큰 해시)
@@ -52,13 +57,11 @@
 
 ### 인증 구조 요약
 
-| 구분               | 방식                           |
-| ------------------ | ------------------------------ |
-| Access Token       | JWT (15분), 응답 Body          |
-| Refresh Token      | JWT (7일), **HttpOnly Cookie** |
-| Refresh Token 저장 | **DB에 bcrypt 해시로 저장**    |
-| 동시 로그인        | 같은 브라우저 내 유지          |
-| 로그아웃           | DB 토큰 폐기 + 쿠키 삭제       |
+| 구분                 | 방식                                                                    |
+| -------------------- | ----------------------------------------------------------------------- |
+| **Access Token**     | JWT, `localStorage`에 저장 (인증 유지용)                                |
+| **멀티탭 동기화**    | `BroadcastChannel`을 통한 실시간 상태(State) 공유                       |
+| **초기 데이터 복구** | 새로고침 시 `localStorage`에서 토큰을 읽어 인증 복구 (`useRestoreUser`) |
 
 ---
 
@@ -93,6 +96,29 @@
 
 ---
 
+### 사용자 계정 관리 보안 정책
+
+- **회원정보 수정**
+
+  - Access Token 기반 인증 필수
+  - 수정 성공 시 최신 사용자 정보 반환
+  - 프론트엔드 전역 상태 및 멀티 탭 간 즉시 동기화
+
+- **비밀번호 변경**
+
+  - 기존 비밀번호 검증 필수
+  - 현재: 사용자 편의 중심 세션 유지
+  - 보안 강화 필요 시 서버 측에서 해당 유저의 모든 리프레시 토큰 무효 로직 추가 가능
+
+- **회원 탈퇴**
+
+  - 비밀번호 재확인 필수
+  - 사용자 계정 삭제
+  - DB에 저장된 Refresh Token 즉시 제거
+  - 모든 클라이언트 세션 강제 로그아웃 처리
+
+---
+
 ### 인증 흐름
 
 ```text
@@ -112,6 +138,12 @@
 [Logout]
   ├─ DB Refresh Token 제거
   └─ 쿠키 삭제
+
+[Delete Account]
+  ├─ 비밀번호 재확인
+  ├─ User 데이터 삭제
+  ├─ DB Refresh Token 제거
+  └─ 모든 탭/세션 로그아웃
 ```
 
 ---
@@ -122,6 +154,23 @@
 - DB에서 토큰 임의 변경 → 다음 Refresh 시 로그아웃 처리
 - 로그아웃 후 Refresh 시도 → 실패
 - 테스트 API는 모두 제거 후 Postman/curl/브라우저로 검증
+
+---
+
+## Frontend 상태 관리 & UX 보강
+
+### 프론트엔드 인증 상태 동기화
+
+- React Context 기반 전역 인증 상태 관리
+- Axios Interceptor로 Access Token 만료 자동 처리
+- **BroadcastChannel 기반 멀티 탭 동기화**
+
+  - 로그인 / 로그아웃
+  - 회원정보 수정
+  - 탈퇴 시 즉시 상태 반영
+
+> **설계 장점**
+> : `storage` 이벤트보다 응답 속도가 빠르고, 문자열뿐만 아니라 객체(User Object)를 직접 전달할 수 있어 추가적인 서버 요청(GET /me)을 최소화함
 
 ---
 
@@ -257,6 +306,25 @@ npm run dev
   <td align="center" valign="top"><img src="./docs/images/signup.png" width="180"/></td>
   <td align="center" valign="top"><img src="./docs/images/login.png" width="180"/></td>
   <td align="center" valign="top"><img src="./docs/images/login_after.png" width="180"/></td>
+</tr>
+</table>
+
+### 회원 정보 수정
+
+- 닉네임 / 프로필 이미지 변경
+- 비밀번호 변경 (기존 비밀번호 검증)
+- 회원 탈퇴 (비밀번호 재확인 + 즉시 로그아웃)
+
+<table>
+<tr>
+  <td align="center">회원 정보</td>
+  <td align="center">비밀번호 변경</td>
+  <td align="center">회원 탈퇴</td>
+</tr>
+<tr>
+  <td align="center" valign="top"><img src="./docs/images/profile_base.png" width="180"/></td>
+  <td align="center" valign="top"><img src="./docs/images/profile_pw_change.png" width="180"/></td>
+  <td align="center" valign="top"><img src="./docs/images/profile_del_modal.png" width="180"/></td>
 </tr>
 </table>
 

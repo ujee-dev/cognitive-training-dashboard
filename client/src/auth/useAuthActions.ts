@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { authApi } from "../api/api";
@@ -18,7 +18,7 @@ export function useAuthActions() {
   const login = useCallback(
     async (accessToken: string) => {
       localStorage.setItem("accessToken", accessToken);
-      authBroadcast.send("login");
+      authBroadcast.send({type: "login"});
 
       const me = await authApi.getMe();
       setUser(me);
@@ -45,7 +45,7 @@ export function useAuthActions() {
       // console.warn("서버 로그아웃 실패 → 클라이언트 정리");
     } finally {
       localStorage.removeItem("accessToken");
-      authBroadcast.send("logout"); // 의도 전달만, 실제 정리는 각 탭에서 스스로
+      authBroadcast.send({type: "logout"}); // 의도 전달만, 실제 정리는 각 탭에서 스스로
       setUser(null);
 
       sessionState.endLogout(); // 정리 완료
@@ -73,33 +73,6 @@ export function useAuthActions() {
       setIsLoading(false);
     }
   }, [setUser, setIsLoading]);
-
-  // 멀티 탭 로그아웃 동기화 (우선 핵심: 없으면 동기화 X 새로고침 필요해짐)
-  useEffect(() => {
-    const handleStorageChange = async (e: StorageEvent) => {
-      // 로컬스토리지의 accessToken이 변경되었을 때 실행
-      if (e.key === "accessToken") {
-        if (!e.newValue) {
-          // 토큰이 삭제되었다면 (다른 창에서 로그아웃)
-          setUser(null);
-        } else {
-          // 다른 탭에서 로그인 시
-          // 토큰만 true로 바꿀 게 아니라,
-          // 서버에서 유저 정보를 가져와야 헤더에 이름이 표시 됨
-          try {
-            const me = await authApi.getMe(); // 유저 정보 호출
-            setUser(me);
-          } catch {
-            console.error("유저 정보 복구 실패");
-          }
-        }
-      }
-    };
-
-    // 다른 창의 로컬스토리지 변화를 감지
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
 
   return { login, logout, restoreAuth };
 }

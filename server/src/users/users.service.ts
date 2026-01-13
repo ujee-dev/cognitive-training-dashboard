@@ -1,8 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schema/user.schema';
 import * as bcrypt from 'bcrypt';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountdDto } from './dto/delete-account';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // 해싱 책임 → AuthService
 // DB 저장 책임 → UsersService
@@ -43,7 +52,7 @@ export class UsersService {
 
   /**
    * Refresh Token 업데이트
-   * : findByIdAndUpdate보다 "findById -> save() 방식"이 권장되는 이유:
+   * : findByIdAndUpdate보다 'findById -> save() 방식'이 권장되는 이유:
    * Mongoose 미들웨어(pre-save)가 작동하며, 객체 지향적인 업데이트가 가능합니다.
    */
 
@@ -89,17 +98,81 @@ export class UsersService {
   // 프로필 수정
   async updateProfile(
     userId: string,
-    updateData: Partial<User>,
+    updateData: UpdateProfileDto,
   ): Promise<UserDocument> {
-    const user = await this.userModel
+    // 1. 기존 유저 정보 조회
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    // 2. 물리적 파일 삭제 로직 (이미지가 교체되거나 삭제될 때)
+    // updateData.profileImage가 존재한다는 것은 수정(새 경로) 또는 삭제(null) 요청이라는 뜻입니다.
+    if (
+      Object.prototype.hasOwnProperty.call(updateData, 'profileImage') &&
+      user.profileImage
+    ) {
+      const oldFilePath = path.join(process.cwd(), user.profileImage);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath); // 서버에서 실제 파일 삭제
+      }
+    }
+
+    // 3. DB 업데이트
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(
         userId,
         { $set: updateData },
-        { new: true }, // 업데이트된 도큐먼트 반환
+        { new: true }, // 업데이트된 데이터 반환
       )
       .exec();
 
+    if (!updatedUser)
+      throw new NotFoundException('수정 중 오류가 발생했습니다.');
+    return updatedUser;
+  }
+
+  /**
+   * 비밀번호 변경
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.userModel.findById(userId).exec();
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    return user;
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('현재 비밀번호가 올바르지 않습니다.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    user.password = hashedPassword;
+
+    await user.save();
+  }
+
+  /**
+   * 회원 탈퇴
+   */
+  async deleteAccount(userId: string, dto: DeleteAccountdDto): Promise<void> {
+    const user = await this.userModel.findById(userId).select('+password');
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    // 비밀번호 검증 (bcrypt 사용 시)
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+    }
+    // 프로필 이미지가 있다면 물리적 파일 삭제
+    if (user.profileImage) {
+      const absolutePath = path.join(process.cwd(), user.profileImage);
+      if (fs.existsSync(absolutePath)) {
+        try {
+          fs.unlinkSync(absolutePath);
+        } catch (err) {
+          console.error('파일 삭제 실패:', err);
+        }
+      }
+    }
+
+    // DB에서 사용자 삭제
+    await this.userModel.findByIdAndDelete(userId);
   }
 }

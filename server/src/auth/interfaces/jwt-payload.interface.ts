@@ -22,3 +22,7 @@ export interface ValidatedUser {
 export interface ValidatedRefreshUser extends ValidatedUser {
   refreshToken: string;
 }
+
+export interface JwtRequest extends Request {
+  user: ValidatedUser;
+}

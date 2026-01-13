@@ -21,7 +21,8 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "multer"], // node와 multer 타입을 명시적으로 추가
   },
   "include": ["src/**/*"], // src 폴더 내의 모든 파일을 포함
 }

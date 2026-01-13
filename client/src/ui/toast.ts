@@ -21,6 +21,10 @@ export const showSessionExpired = () => {
   }, 3000);
 };
 
+export const showMessage = (message: string) => {
+  toast.success(message);
+};
+
 /**
  * 공통 성공 메시지 - 페이지/컴포넌트에서 직접 호출
  */

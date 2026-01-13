@@ -32,6 +32,12 @@ export function handleApiError(error: unknown) {
     case 403:
       showForbidden();
       break;
+    
+    case 404:
+      showValidationError(
+        typeof data?.message === "string" ? data.message : undefined
+      );
+      break;
 
     case 409:
       showConflict(

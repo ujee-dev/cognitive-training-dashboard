@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RecordsModule } from './records/records.module';
 //import { TestController } from './test/test.controller';
+import { ServeStaticModule } from '@nestjs/serve-static'; // 설치 필요 npm install --save-dev @types/node
+import * as path from 'path'; // 명시적으로 path 전체를 가져옴
 
 @Module({
   imports: [
@@ -38,6 +40,12 @@ import { RecordsModule } from './records/records.module';
           //useUnifiedTopology: true,
         };
       },
+    }),
+    ServeStaticModule.forRoot({
+      // 실제 파일이 저장된 물리적 경로
+      rootPath: path.join(process.cwd(), 'uploads'),
+      // 웹 브라우저에서 접근할 경로 (http://localhost:3000/uploads/...)
+      serveRoot: '/uploads',
     }),
     AuthModule,
     UsersModule, // 여기가 빠져있으면 UsersController가 작동하지 않습니다.

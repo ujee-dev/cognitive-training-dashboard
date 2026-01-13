@@ -6,6 +6,7 @@ import { Performance } from "../pages/Performance";
 import { ResponsiveAuthPage } from "../pages/ResponsiveAuthPage";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import { SignupPage } from "../pages/SignupPage";
+import { Profile } from "../pages/Profile";
 
 const AppRouter = () => {
   return (
@@ -20,6 +21,7 @@ const AppRouter = () => {
       {/* 보호된 라우트 */}
       <Route element={<ProtectedRoute />}>
         <Route path="/performance" element={<Performance />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
     </Routes>
   );

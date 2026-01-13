@@ -9,6 +9,11 @@ import { useAuthActions } from "../../auth/useAuthActions";
 const Header: React.FC = () => {
   const { user } = useAuth();
   const { logout } = useAuthActions();
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
+  const initialImage = user?.profileImage 
+    ? (user.profileImage.startsWith('http') ? user.profileImage : `${API_BASE_URL}${user.profileImage}?t=${new Date().getTime()}`)
+    : undefined;
   
   const [isOpen, setIsOpen] = useState(false); // 모바일 메뉴 상태
 
@@ -113,13 +118,15 @@ const Header: React.FC = () => {
               ) : (
                 <>
                   <li>
-                    <div className="flex items-center w-9 space-x-2 bg-gray-500 text-white px-3 py-1 rounded-full">
+                    <NavLink
+                      to="/profile"
+                      className="flex items-center justify-center w-10 h-10 bg-gray-500 text-white hover:bg-brand rounded-full overflow-hidden border border-gray-200">
                       {user?.profileImage ? (
-                        <img src={user.profileImage} alt="profile" />
+                        <img src={initialImage} alt="profile" className="w-full h-full object-cover"/>
                       ) : (
                         user?.nickname[0] // 이름의 첫 글자만 표시 (예: '홍')
                       )}
-                    </div>
+                    </NavLink>
                   </li>
                   <li>
                     <button
