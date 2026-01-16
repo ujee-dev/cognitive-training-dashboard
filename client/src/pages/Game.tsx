@@ -6,7 +6,7 @@ import GamePageContainer from '../components/layout/GamePageContainer';
 
 export function Game() {
   const { state } = useLocation();
-  const difficulty: Difficulty = state?.difficulty ?? 'normal';
+  const difficulty: Difficulty = state?.difficulty ?? 'NORMAL';
 
   const [sessionId, setSessionId] = useState(0);
 

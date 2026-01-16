@@ -1,4 +1,4 @@
-import type { StoredGameResult } from '../types/storage';
+import type { RecordLean } from '../types/Dashboard';
 import { movingAverage } from './movingAverage';
 
 interface TrendData {
@@ -9,8 +9,8 @@ interface TrendData {
 
 // 최근 N회 추이 + 이동 평균 계산 (avgReactionTime, accuracy, skillScore)
 export function buildTrendData(
-  results: StoredGameResult[],
-  key: keyof StoredGameResult
+  results: RecordLean[],
+  key: keyof RecordLean
 ): TrendData[] {
   const raw = results.map(r => r[key] as number);
   const smoothed = movingAverage(raw, 5);

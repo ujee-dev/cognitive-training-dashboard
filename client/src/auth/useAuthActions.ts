@@ -47,7 +47,7 @@ export function useAuthActions() {
       localStorage.removeItem("accessToken");
       authBroadcast.send({type: "logout"}); // 의도 전달만, 실제 정리는 각 탭에서 스스로
       setUser(null);
-
+      localStorage.removeItem("logout-event");
       sessionState.endLogout(); // 정리 완료
       authRedirect.afterLogout(navigate);
     }

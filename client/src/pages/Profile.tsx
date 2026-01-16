@@ -58,7 +58,7 @@ export function Profile() {
 
     try {
       // 서버 응답 결과 (updatedUser)를 받음
-      const updated = await authApi.updateProfile(formData); 
+      const updated = await authApi.updateProfile(formData);
       
       // 내 탭의 상태 변경
       setUser(updated);

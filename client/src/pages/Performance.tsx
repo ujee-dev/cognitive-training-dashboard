@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Difficulty } from '../config/gameConfig';
+import clsx from 'clsx';
 
-// data
-import { loadGameResults } from '../utils/loadGameResults';
-import { getRecentResults } from '../utils/getRecentResults';
-import { buildTrendData } from '../utils/buildTrendData';
-import { buildAverageData } from '../utils/buildAverageData';
-import { findExtremes } from '../utils/findExtremes';
-import { judgeProgress } from '../utils/judgeProgress';
+// auth & api
+import { useAuth } from "../auth/useAuth";
+import { handleApiError } from "../api/handleApiError";
+import { recordApi } from "../api/api";
+import { useGame } from "../components/game/useGame";
+
+import type { DashboardResponseDto, RecordLean } from '../types/Dashboard';
 
 // chart
 import { ReactionTrendChart } from '../ui/charts/ReactionTrendChart';
@@ -25,94 +26,107 @@ import Card from '../components/ui/Card';
 import CardSub from '../components/ui/CardSub';
 import DescriptionRow from '../components/ui/DescriptionRow';
 import { ExtremeCard } from '../ui/performance/ExtremeCard';
+import { buildTrendData } from '../utils/buildTrendData';
+import StatItem from '../components/ui/StatItem';
 
 export function Performance() {
-  /* --- 난이도 --- */
-  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const { user } = useAuth();
+  const { gameInfo, setGame } = useGame();
+  const [ loading, setLoading ] = useState(true);
+  const [ difficulty, setDifficulty ] = useState<Difficulty>('NORMAL');
 
-  /* --- 데이터 로드 & 파생 --- */
-  // 전체 기록
-  const allResults = loadGameResults();
+  const [ dashboardData, setDashboardData ] = useState<DashboardResponseDto>();
+  const [ recentRecords, setRecentRecords ] = useState<RecordLean[]>([]);
 
-  /** ----- useMEmo ----- **/
-  // useMemo는 성능 최적화를 위해 사용되며
-  // 특정 값이 변경될 때만 계산을 다시 수행하고
-  // 그 외에는 이전 계산 값을 재사용하는 역할
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-  // 난이도 필터 - 전체 데이터
-  const byDifficulty = useMemo(
-    () => allResults.filter(r => r.difficulty === difficulty),
-    [allResults, difficulty]
-  ).filter(
-    r => (r.avgReactionTime + r.accuracy) > 0
-  );
-
-  // 타임라인 가져오기 - 최근 10회 데이터
-  const recentResults = useMemo(
-    () => getRecentResults(byDifficulty, difficulty, 10),
-    [byDifficulty, difficulty]
-  ).filter(
-    r => (r.avgReactionTime + r.accuracy) > 0
-  );
-
-  /* --- 반응 속도 추이 차트 --- */
-  // useMemo = 랜더링을 기억하는 것이 아닌 계산 결과를 기억 (값을 반환)
-  // 난이도 변경 시만 계산, 차트/카드 리렌더 최소화
-
-  // 차트용: 이미 정제된 데이터만 받도록 설계
-  // 차트별 overall 값 구하기
-  // 반응속도 overall & 반응속도 평균비교
-  const {
-    overallReactionTime,
-    recentReactionTime,
-    overallSkillScore,
-    overallAccuracy,
-  } = useMemo(
-    () => buildAverageData(byDifficulty, recentResults),
-    [byDifficulty, recentResults]
-  );
+  /* --- [중요] 모든 Hook은 조기 반환 이전에 위치해야 함 --- */
 
   // 최근 N회 반응속도 추이
-  const trendData = useMemo(
-    () => buildTrendData(recentResults, 'avgReactionTime'),
-    [recentResults]
-  ).reverse();
+  const reactionTrendData = useMemo(
+    () => buildTrendData(recentRecords, 'avgReactionTime').reverse(),
+    [recentRecords]
+  );
 
   // 최근 N회 집중도 추이
   const skillScoreTrendData = useMemo(
-    () => buildTrendData(recentResults, 'skillScore'),
-    [recentResults]
-  ).reverse();
+    () => buildTrendData(recentRecords, 'skillScore').reverse(),
+    [recentRecords]
+  );
 
   // 최근 N회 정확도 추이
   const accuracyTrendData = useMemo(
-    () => buildTrendData(recentResults, 'accuracy'),
-    [recentResults]
-  ).reverse();
-
-  /* --- 최고/최저 기록 --- */
-  const extremes = useMemo(
-    () => findExtremes(byDifficulty),
-    [byDifficulty]
+    () => buildTrendData(recentRecords, 'accuracy').reverse(),
+    [recentRecords]
   );
 
-  /* --- 실력 향상 판정: 최근 N회, SkillScore --- */
-  // 최근 데이터는 최신이 위이므로 reverse 전달
-  // 하지만 useMemo 의존성 배열로 직접적(recentResults.revers()) 전달하면
-  // 다른 동일한 모든 의존성 데이터(recentResults)에도 영향을 미침
-  // 따라서 복사본([...recentResults])을 만들어 사용하여 원본 데이터에 영향을 주지 않도록 함
-  const progress = useMemo(
-    () => judgeProgress([...recentResults].reverse(), overallSkillScore),
-    [recentResults, overallSkillScore]
-  );
+  /* --- 데이터 로드 --- */
+  useEffect(() => {
+    let mounted = true;
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchGameAndData = async () => {
+      setLoading(true);
+
+      // 게임 정보가 없으면 먼저 로드
+      if (!gameInfo) {
+        try {
+          const fetchedGame = await recordApi.getGame("card-matching");
+          if (!mounted) return;
+          setGame(fetchedGame);
+        } catch (e) {
+          handleApiError(e);
+        }
+      }
+
+      if (!mounted) return;
+      await loadData();
+    };
+
+    fetchGameAndData();
+    return () => { mounted = false; };
+  }, [user, gameInfo?.id, difficulty, setGame]); // difficulty 변경 시 재로드 필요
+
+  const loadData = async () => {
+    // 로딩 시작을 명시적으로 표시
+    if (!gameInfo) return;
+
+    setLoading(true);
+    try {
+      const serverData = await recordApi.getDashboard(gameInfo?.id, difficulty);
+      setDashboardData(serverData);
+      setRecentRecords(serverData.recentRecords);
+    } catch {
+      handleApiError("데이터를 불러오지 못했습니다.");
+    } finally {
+      setLoading(false); // 데이터 로드 성공/실패와 상관없이 로딩 종료
+    }
+  };
+
+  if (!user) {
+    return
+      <PageContainer>
+        <Card variant="brand">접근이 거부되었습니다. 다시 로그인하세요</Card>
+      </PageContainer>;
+  }
+
+  // 로그인 상태인데 데이터 로딩 중
+  if (loading || !dashboardData) {
+    return <PageContainer><Card variant="brand">통계 데이터를 분석 중입니다...</Card></PageContainer>;
+  }
 
   /* --- UI --- */
   return (
     <PageContainer>
       <CardSub title="성과 분석 안내" variant='border'>
-        다음은 "유효 게임" 진행에 대한 통계 입니다.
+        다음은 "유효 게임" 진행에 대한 통계 입니다.<br/>
         ( 진행하지 않고 자동 시간 종료 또는 중단한 게임은 제외됩니다. )<br />
-        " <strong>데이터가 적으면 분석이 정확하지 않을 수 있습니다.</strong> "
+        📍 " <strong>데이터가 적으면 분석이 정확하지 않을 수 있습니다.</strong> "<br />
+        📍 <strong>차트의 전체 평균, 실력 향상 판정 기준은 "30일" 입니다.</strong>
       </CardSub>
 
       {/* 난이도 선택 */}
@@ -122,58 +136,113 @@ export function Performance() {
           value={difficulty}
           onChange={e => setDifficulty(e.target.value as Difficulty)}
           className="border px-2 py-1 rounded text-sm mx-auto">
-            <option value="easy">쉬움</option>
-            <option value="normal">보통</option>
-            <option value="hard">어려움</option>
+            <option value="EASY">쉬움</option>
+            <option value="NORMAL">보통</option>
+            <option value="HARD">어려움</option>
         </select>
       </div>
 
       <Card title="실력 향상 배지" variant='brandDark' titleVariant='titleBrand'>
-        <ProgressBadge status={progress.status} message={progress.message} color={progress.color} />
+        <ProgressBadge
+          status={dashboardData.progress.status}
+          message={dashboardData.progress.message}
+          color={dashboardData.progress.color} />
+      </Card>
+
+      <Card title="순위" variant='brandDark' titleVariant='titleBrand'>
+        <div className='pt-3 pb-5 space-y-3'>
+          {/*내 순위 정보*/}
+          <StatItem label="★ 내 순위:" value={dashboardData.myRank ?? '-'} unit="위" />
+          <StatItem label="☆ 상위" value={dashboardData.topPercentage ?? '-'} unit="%" />
+        </div>
+        <p className=' text-orange-400'>- 전체 10 위 -</p><br/>
+        <div className='pt-1 text-sm justify-center items-center'>
+          <hr className='pt-2'/>
+          {/* 헤더 부분 - 가독성을 위해 폰트 굵기와 색상 조정 */}
+          <li className="grid grid-cols-[1fr_2fr_1fr] w-full font-bold border-b border-gray-300 pb-2 px-3">
+            <span className="text-left">순위</span>
+            <span className="text-center">User</span>
+            <span className="text-right">점수</span>
+          </li>
+
+          {/* 데이터 리스트 */}
+          {dashboardData.ranking.map((r) => (
+            <li 
+              key={r.userId} 
+              className={clsx(
+                'grid grid-cols-[1fr_2fr_1fr] w-full py-3 px-3 border-b border-gray-300 hover:bg-brand-light',
+                r.isMe && 'font-extrabold text-yellow-300'
+              )}
+            >
+              <span className="text-left">{r.rank}</span>
+              <span className="flex items-center gap-2">
+                {r.profileImage && (
+                  <img
+                    src={`${API_BASE_URL}${r.profileImage}?t=${Date.now()}`}
+                    alt="프로필"
+                    className="w-7 h-7 rounded-full object-cover"
+                  />
+                )}
+                {r.nickname}
+              </span>
+              <span className="text-right">{r.score}점</span>
+            </li>
+          ))}
+        </div>
       </Card>
 
       <Card title="최근 10 회 게임 기록" variant="default" titleVariant='base'>
-        <RecentTimeline results={recentResults}/>
+        <RecentTimeline results={recentRecords}/>
       </Card>
 
       <Card title="최근 10 회 집중도 추이" variant="default" titleVariant='base'>
-        <SkillScoreTrendChart data={skillScoreTrendData} overallAvg={overallSkillScore} />
-      { (skillScoreTrendData.length > 0) &&
-        <DescriptionRow
-          left="이동 평균선 = 기준선 최근 5개의 평균 값"
-          right="실제 값"
-        />
-      }
+        <SkillScoreTrendChart
+          data={skillScoreTrendData}
+          overallAvg={dashboardData.avgAccuracy30dValue} />
+          { (skillScoreTrendData.length > 0) &&
+            <DescriptionRow
+              left="이동 평균선 = 기준선 최근 5개의 평균 값"
+              right="실제 값"
+            />
+          }
       </Card>
 
       <Card title="최근 10 회 반응 속도 추이" variant="default" titleVariant='base'>
-        <ReactionTrendChart data={trendData} overallAvg={overallReactionTime} />
-      { (trendData.length > 0) &&
-        <DescriptionRow
-          left="이동 평균선 = 기준선 최근 5개의 평균 값"
-          right="실제 값"
-        />
-      }
+        <ReactionTrendChart
+          data={reactionTrendData}
+          overallAvg={dashboardData.avgReaction30dValue} />
+          { (reactionTrendData.length > 0) &&
+            <DescriptionRow
+              left="이동 평균선 = 기준선 최근 5개의 평균 값"
+              right="실제 값"
+            />
+          }
       </Card>
 
       <Card title="최근 10 회 정확도 추이" variant="default" titleVariant='base'>
-        <AccuracyTrendChart data={accuracyTrendData} overallAvg={overallAccuracy} />
-      { (accuracyTrendData.length > 0) &&
-        <DescriptionRow
-          left="이동 평균선 = 기준선 최근 5개의 평균 값"
-          right="실제 값"
-        />
-      }
+        <AccuracyTrendChart
+          data={accuracyTrendData}
+          overallAvg={dashboardData.overallAvgSkillScore} />
+          { (accuracyTrendData.length > 0) &&
+            <DescriptionRow
+              left="이동 평균선 = 기준선 최근 5개의 평균 값"
+              right="실제 값"
+            />
+          }
       </Card>
 
       <Card title="반응 속도 평균 비교" variant="brandDark" titleVariant='titleBrand'>
-        <AverageCompareCard recent={recentReactionTime} overall={overallReactionTime} />
+        <AverageCompareCard
+          recent={dashboardData.avgReactionRecent10}
+          overall={dashboardData.avgReaction30dValue} />
       </Card>
 
       <Card title="기록 하이라이트" variant="brandDark" titleVariant='titleBrand'>
-        {!extremes
-          ? <div className='text-sm'>데이터가 없습니다.</div>
-          : <ExtremeCard best={extremes.best} worst={extremes.worst} />
+        {(dashboardData.bestSkillScore > 0)
+          ? <ExtremeCard
+              best={dashboardData.bestSkillScore}
+              worst={dashboardData.worstSkillScore} />
+          : <div className='text-sm'>데이터가 없습니다.</div>
         }
       </Card>
       <div className='h-12'/>

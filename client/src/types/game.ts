@@ -1,5 +1,5 @@
 // 게임 플레이 중 사용
-export type Difficulty = 'easy' | 'normal' | 'hard';
+import type { Difficulty } from "../config/gameConfig";
 
 export type GameStatus = 'preview' | 'playing' | 'finished';
 
@@ -18,4 +18,11 @@ export interface GameResult {
   accuracy: number;
   duration: number; // 초
   reactionTimes: number[];
+}
+
+export interface GameConfig {
+  difficulty: Difficulty;
+  pairs: number;
+  timeLimit: number;
+  previewSeconds: number;
 }

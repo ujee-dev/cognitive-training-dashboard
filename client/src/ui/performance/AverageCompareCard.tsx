@@ -22,17 +22,18 @@ export function AverageCompareCard({
 
   return (
     <div className="space-y-2 text-sm">
-      <StatItem label="최근 10 회" value={recent} unit=" 초" />
-      <StatItem label="전체 평균" value={overall} unit=" 초" />
-      <div className="grid place-items-center font-semibold tracking-widest">
-      <span className={diff === 0 ? 'text-white' : diff > 0 ? 'text-green-600' : 'text-red-600'}>
-        {diff === 0 
-          ? "➖ 유지" 
-          : diff > 0 
-            ? `⬇ ${diff} 초 개선` 
-            : `⬆ ${Math.abs(diff)} 초 저하`
-        }
-      </span></div>
+      <StatItem label="최근 10 회 평균" value={recent} unit=" 초" />
+      <StatItem label="최근 30 일 평균" value={overall} unit=" 초" />
+      <div className="grid place-items-center font-semibold tracking-widest pt-3">
+        <span>
+          {diff === 0 
+            ? "⚖️ 유지" 
+            : diff > 0 
+              ? `🚀 ${diff} 초 개선` 
+              : `⚠️ ${Math.abs(diff)} 초 저하`
+          }
+        </span>
+      </div>
     </div>
   );
 }

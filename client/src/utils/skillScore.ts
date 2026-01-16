@@ -1,35 +1,56 @@
+import { GAME_CARD_CONFIG as config, Difficulty } from "../config/gameConfig";
+
 /**
  * 가중치 설정
  */
-const CALC_WEIGHT = {
-  ACC_WEIGHT: 0.6,       // 정확도 가중치 60%
-  REACTION_WEIGHT: 0.4,  // 반응속도 가중치 40%
+interface ReactionScale {
+  minTime: number;
+  maxTime: number;
+  minScore?: number;
+}
+
+const REACTION_SCALES: Record<Difficulty, ReactionScale> = {
+  [Difficulty.EASY]: { minTime: 0.4, maxTime: 2.0 },
+  [Difficulty.NORMAL]: { minTime: 0.4, maxTime: 2.5 },
+  [Difficulty.HARD]: { minTime: 0.5, maxTime: 3.5 },
 };
 
 // reactionScore 구하기
-export function normalizeReaction(sec: number) {
-  if (sec <= 0.4) return 100; // 최고점: 반응속도 한계치로 봄 (변별력 낮음)
-  if (sec >= 2.0) return 0;   // 최저점: 인지, 집중 저하로 판단
-  // 0.5 ~ 1.9 sec: 실제 실력 차이가 드러나는 구간 > 선형 감점
+export function normalizeReaction(avgReactionTime: number, difficulty: Difficulty) {
+  const scale = REACTION_SCALES[difficulty];
 
-  // 유효한 반응속도 구간 = 2.0 - 0.4 = 1.6 = 점수가 선형으로 감소하는 전체 구간
-  // 1. (sec-0.4) :최소 반응속도(0점 감점 시작점)로부터 얼마나 느린지
-  // 2. / 1.6 : 그 느려진 정도를 0 ~ 1 사이 비율로 정규화
-  //    >> 결과적으로 균등하게 감소하는 선형 스케일
-  // 3. (100 - 최종적으로 계산된 백분율 값) -> 반대 방향으로 값을 조정: sec가 느릴수록 감점
-  // ex. 0.5 sec -> (0.1 / 1.6) -> 0.0625 * 100 -> 100 - 6.25 => Math.round(93.75) = 94
-  //     1.2 sec -> (0.8 / 1.6) -> 0.5 * 100 -> 100 - 50 => Math.round(50) = 50
-  //     1.9 sec -> (1.5 / 1.6) -> 0.9375 * 100 -> 100 - 93.75 => Math.round(6.25) = 6
-  return Math.round(100 - ((sec - 0.4) / 1.6) * 100);
+  if (avgReactionTime <= scale.minTime) return 100;
+  if (avgReactionTime >= scale.maxTime) return scale.minScore ?? 0;
+
+  const raw =
+    100 -
+    ((avgReactionTime - scale.minTime) / (scale.maxTime - scale.minTime)) * 100;
+
+  return Math.max(scale.minScore ?? 0, Math.round(raw));
 }
 
 export function calcSkillScore(
   accuracy: number,
-  avgReaction: number
+  avgReactionTime: number,
+  difficulty: Difficulty,
+  failedAttempts: number,
 ) {
   // reactionScore 구하기 호출 실행
-  const reactionScore = normalizeReaction(avgReaction);
-  return Math.round(
-    accuracy * CALC_WEIGHT.ACC_WEIGHT + reactionScore * CALC_WEIGHT.REACTION_WEIGHT
-  );
+  const reactionScore = normalizeReaction(avgReactionTime, difficulty);
+
+  // 가중치 기반 기본 점수 (DB 설정값 사용)
+  const baseScore =
+    accuracy * config[difficulty].accuracyWeight +
+    reactionScore * config[difficulty].reactionWeight;
+
+  // 배율 적용
+  let finalScore = baseScore * config[difficulty].scoreMultiplier;
+
+  // 감점 적용 (Penalty Weight)
+  if (failedAttempts && config[difficulty].penaltyWeight) {
+    finalScore -= failedAttempts * config[difficulty].penaltyWeight;
+  }
+
+  // 점수가 음수가 되지 않도록 방지
+  return Math.max(0, Math.round(finalScore));
 }

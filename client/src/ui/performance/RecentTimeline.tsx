@@ -1,6 +1,6 @@
-import type { StoredGameResult } from '../../types/storage';
+import type { RecordLean } from '../../types/Dashboard';
 
-export function RecentTimeline({ results }: { results: StoredGameResult[] }) {
+export function RecentTimeline({ results }: { results: RecordLean[] }) {
 
   if (results.length == 0) {
     return (
@@ -28,7 +28,7 @@ export function RecentTimeline({ results }: { results: StoredGameResult[] }) {
           className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] w-full py-3 border-b border-gray-300 last:border-0 hover:bg-surface-50 transition-colors"
         >
           <span className="text-left font-medium text-surface-700">
-            {new Date(r.playedAt).toLocaleDateString()}
+            {new Date(r.createdAt).toLocaleDateString()}
           </span>
           <span className="text-right">{r.duration}s</span>
           <span className="text-right">{r.accuracy}%</span>

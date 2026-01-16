@@ -7,7 +7,7 @@ import { User, UserSchema } from './schema/user.schema'; // 유저 스키마 경
 
 @Module({
   imports: [
-    // ⭐️ 이 부분이 핵심입니다! UserModel을 이 모듈에서 쓸 수 있게 등록합니다.
+    // 이 부분이 핵심입니다! UserModel을 이 모듈에서 쓸 수 있게 등록합니다.
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   controllers: [UsersController],

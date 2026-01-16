@@ -12,6 +12,8 @@ import type {
 
 import { publicApi } from "./publicAxios";
 import api from "./axios";
+import type { Difficulty } from "../config/gameConfig";
+import type { DashboardResponseDto } from "../types/Dashboard";
 
 // 생성/변경 = POST / 조회 = GET (로그인은 POST)
 // 삭제 = DELETE / 일부 필드 수정 = PATCH / 전체 갱신 = PUT
@@ -107,18 +109,46 @@ export const authApi = {
  * 게임 데이터 관련 API
  */
 export const recordApi = {
+  getGame: async(code: string) => {
+    const res = await api.get(`${ENDPOINTS.RECORDS}/games/${code}`);
+    return res.data;
+  },
+
+  getGameConfig: async(code: string, difficulty: Difficulty) => {
+    const res = await api.get(`${ENDPOINTS.RECORDS}/gameConfig`, {
+      params: {
+        gameId: code,
+        difficulty: difficulty,
+      },
+    });
+    return res.data;
+  },
+
   saveRecord: async (record: Record) => {
     const res = await api.post(ENDPOINTS.RECORDS, record);
     return res.data;
   },
 
-  getTop10: async (difficulty: string) => {
-    const res = await api.get(`${ENDPOINTS.RECORDS}/top10/${difficulty}`);
+  // 현재 클라이언트 코드 사용 유지..
+  getMyStats: async (code: string) => {
+    const res = await api.get(`${ENDPOINTS.RECORDS}/stats/summary`, {
+      params: {
+        gameId: code,
+      },
+    });
+
     return res.data;
   },
 
-  getMyRecords: async (difficulty: string) => {
-    const res = await api.get(`${ENDPOINTS.RECORDS}/my/${difficulty}`);
-    return res.data;
+  getDashboard: async (code: string, difficulty: string):
+    Promise<DashboardResponseDto> => {
+      const res = await api.get(`${ENDPOINTS.RECORDS}/dashboard`, {
+        params: {
+          gameId: code,
+          difficulty: difficulty,
+        },
+      });
+
+      return res.data;
   },
 };

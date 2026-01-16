@@ -1,5 +1,5 @@
-import type { StoredGameResult } from '../types/storage';
 import type { Difficulty } from '../config/gameConfig';
+import type { GameResultView } from '../types/resultView';
 
 export interface DifficultyStats {
   difficulty: Difficulty;
@@ -11,12 +11,12 @@ export interface DifficultyStats {
 }
 
 export function calcStatsByDifficulty(
-  results: StoredGameResult[]
+  results: GameResultView[]
 ): DifficultyStats[] {
-  const grouped: Record<Difficulty, StoredGameResult[]> = {
-    easy: [],
-    normal: [],
-    hard: [],
+  const grouped: Record<Difficulty, GameResultView[]> = {
+    EASY: [],
+    NORMAL: [],
+    HARD: [],
   };
 
   // Group results by difficulty
@@ -25,7 +25,7 @@ export function calcStatsByDifficulty(
   });
 
   // Helper function to calculate averages
-  const calculateAverages = (items: StoredGameResult[]) => {
+  const calculateAverages = (items: GameResultView[]) => {
     const sum = items.reduce(
       (acc, cur) => {
         acc.duration += cur.duration;

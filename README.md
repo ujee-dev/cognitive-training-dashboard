@@ -4,29 +4,54 @@
 > 사용자의 인지 반응 데이터를 신뢰 가능한 성과 지표로 분석하는
 > 카드 매칭 기반 인지 훈련 풀스택 프로젝트
 
-기존 로컬 환경의 카드 매칭 게임을 확장하여,
-**MongoDB 기반 JWT 인증 체계**를 도입하고
-사용자의 인지 지표를 서버에서 통합 관리하는 풀스택 프로젝트입니다.
+기존 로컬 환경의 카드 매칭 게임을 확장하여, **MongoDB 기반 JWT 인증 체계**를 도입하고 사용자의 인지 지표를 서버에서 통합 관리하는 풀스택 프로젝트입니다.
 
-단순한 게임 플레이를 넘어,
-**사용자의 반응속도와 정확도 데이터를 수집하고 이를 정교한 알고리즘(집중도 점수)으로 분석**하는 것에 초점을 맞추고 있습니다.
+단순한 게임 플레이를 넘어, **반응속도와 정확도 데이터를 수집하고, 난이도별 가중치 및 패널티를 적용한 '집중도 점수(Skill Score)' 알고리즘으로 분석**하는 것에 초점을 맞추고 있습니다.
+
+---
+
+## 주요 업데이트
+
+- **집중도 점수(Skill Score) 알고리즘 고도화**
+
+  - 난이도별 가중치(`accuracyWeight`, `reactionWeight`)
+  - 점수 배율(`scoreMultiplier`)
+  - 실패 패널티(`penaltyWeight`) 도입
+
+- **데이터 소스 최적화**
+
+  - 로그인: 서버 기반 최근 30일 데이터
+  - 비로그인: LocalStorage 기반 전체 데이터
+
+- **서버 사이드 성과 분석**
+
+  - 모든 통계·판정·랭킹 계산을 서버에서 수행
+
+- **경쟁 시스템**
+
+  - 집중도 점수 기준 TOP 10 랭킹
+  - 내 순위 및 상위 퍼센트(%) 제공
 
 ---
 
 ## 프로젝트 개요
 
-- **Frontend**: 게임 UI, 사용자 상호작용, 데이터 시각화
-- **Backend**:
+- **Frontend**
 
-  - 인증
-  - 사용자 관리 (정보 수정, 비번 변경, 회원 탈퇴: 비번 재확인, 세션 무효화)
-  - 작업 예정: 기록 저장, 분석 로직
+  - 게임 UI, 사용자 상호작용, 데이터 시각화
+
+- **Backend**
+
+  - JWT 인증 / Refresh Token 관리
+  - 사용자 계정 관리
+  - 게임 기록 저장
+  - 성과 분석 및 랭킹 계산
 
 - **핵심 주제**
 
-  - JWT 인증 구조 설계
-  - Refresh Token 보안 강화
+  - JWT 인증 보안 구조
   - 인지 데이터의 통계적 신뢰도 확보
+  - 난이도별 변별력 있는 점수 설계
 
 ---
 
@@ -34,28 +59,119 @@
 
 ### Frontend (`client/`)
 
-- React(19.2.3), TypeScript, Vite
-- Tailwind CSS
-- Axios (Interceptor 기반 인증 처리)
-- Recharts (성과 시각화)
+- **Core**: React 19, TypeScript, Vite
+- **UI**: Tailwind CSS
+- **Network**: Axios (Interceptor 기반 인증 및 토큰 갱신)
+- **Visualization**: Recharts (추이 시각화)
 
 ### Backend (`server/`)
 
-- Node.js(22.19.6), Nest.js(11.0.4)
-- MongoDB (Mongoose)
-- Passport (JWT / JWT-Refresh Strategy)
-- bcrypt (비밀번호 & 토큰 해시)
-- class-validator
+- **Core**: Node.js 22, NestJS 11
+- **DB**: MongoDB + Mongoose
+- **Security**: Passport (JWT / Refresh), bcrypt, class-validator
 
 ### 기타
 
-- JWT, HttpOnly, Cookie, Playwright(E2E 테스트)
+- Playwright(E2E 테스트)
+
+---
+
+## 인지 지표 및 분석 설계
+
+### 1. 집중도 점수(Skill Score) 산출 공식
+
+사용자의 인지 능력을 다각도로 평가하기 위해 반응 속도와 정확도를 결합한 복합 지표를 사용합니다.
+
+- **반응 점수(Reaction Score)**
+
+  반응속도를 난이도별 기준값에 따라 **0~100 점수로 정규화**
+
+```ts
+const scale = REACTION_SCALES[difficulty];
+
+if (avgReactionTime <= scale.minTime) return 100;
+if (avgReactionTime >= scale.maxTime) return scale.minScore ?? 0;
+
+const raw =
+  100 -
+  ((avgReactionTime - scale.minTime) / (scale.maxTime - scale.minTime)) * 100;
+
+return Math.max(scale.minScore ?? 0, Math.round(raw));
+```
+
+> 반응 시간이 빠를수록 높은 점수를, 느릴수록 낮은 점수를 부여하여
+> 난이도별 기준에 따라 상대적인 반응 성능을 비교할 수 있도록 설계하였습니다.
+
+- **최종 집중도 점수 (Skill Score)**:
+
+```text
+  finalScore = (
+    (accuracy * accuracyWeight)
+     + (reactionScore * reactionWeight)
+    )
+    * scoreMultiplier
+    - (failedAttempts * penaltyWeight)
+```
+
+- **난이도별 차등 적용**
+
+  - EASY / NORMAL / HARD 별 가중치 및 배율 상이 -> 변별력 확보
+
+- **페널티 시스템**
+
+  - 무작위 클릭 및 실패 누적 방지
+  - `failedAttempts` 발생 시 감점을 부여
+
+- **최소 점수 보장**
+
+  - 0점 미만 방지 (`Math.max(0, ...)`)
+
+> 현재 가중치는 **실험적 설정**이며,
+> A/B 테스트 및 사용자 데이터에 따라 조정 가능하도록 설계하였습니다.
+
+### 2. 데이터 제공 정책
+
+| 구분         | 데이터 소스        | 분석 범위     | 비고           |
+| ------------ | ------------------ | ------------- | -------------- |
+| **비로그인** | `localStorage`     | 전체 누적     | 기기 종속      |
+| **로그인**   | **MongoDB Server** | **최근 30일** | 서버 기준 통계 |
+
+---
+
+## 성과 분석 시스템 (Dashboard)
+
+로그인 사용자 전용 기능이며, **모든 수치와 판정은 서버에서 계산**됩니다.
+
+- **실시간 랭킹**: `GameRecord`의 `skillScore` 인덱스를 활용하여 전체 TOP 10 리스트 제공
+- **내 위치 파악**: 내 최고 점수 기반 현재 순위 및 상위 퍼센트(%) 산출
+- 최근 N회 **이동 평균선** → 실력 추세 시각화
+- **실력 향상 판정**:
+  - **단기(2~4회)**: 초기 기록 대비 최근 기록 변화율($\pm20\%$) 기반 상태 판정
+  - **장기(5회 이상)**: 전반부/후반부 이동 평균 비교를 통한 추세(상승/유지/저하) 분석
+- **서버 사이드 판정**: 클라이언트의 가공 없이 서버에서 `GameDifficultyConfig`의 가중치를 적용한 최종 `progress` 객체를 전달하여 보안성과 일관성을 유지
+
+### 성과 분석 화면
+
+<table>
+<tr>
+  <td align="center">실력 판정, 순위</td>
+  <td align="center">최근 10회 기록</td>
+  <td align="center">추이 그래프</td>
+  <td align="center">비교 (반응속도, 점수)</td>
+</tr>
+<tr>
+  <td align="center" valign="top"><img src="./docs/images/game_performance_1.png" width="180"/></td>
+  <td align="center" valign="top"><img src="./docs/images/game_performance_2.png" width="180"/></td>
+  <td align="center" valign="top"><img src="./docs/images/game_performance_3.png" width="180"/></td>
+  <td align="center" valign="top"><img src="./docs/images/game_performance_4.png" width="180"/></td>
+</tr>
+</table>
 
 ---
 
 ## 인증 / 보안 설계 (JWT)
 
-### 인증 구조 요약
+### Refresh Token 보안 전략 (Rotation)
 
 | 구분                 | 방식                                                                    |
 | -------------------- | ----------------------------------------------------------------------- |
@@ -63,419 +179,119 @@
 | **멀티탭 동기화**    | `BroadcastChannel`을 통한 실시간 상태(State) 공유                       |
 | **초기 데이터 복구** | 새로고침 시 `localStorage`에서 토큰을 읽어 인증 복구 (`useRestoreUser`) |
 
----
+1. **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시값만 저장하여 DB 유출 피해 최소화
+2. **Rotation 적용**: Refresh 요청 시마다 Access/Refresh 토큰을 모두 재발급하며 이전 토큰은 즉시 무효화
+3. **멀티탭 동기화**: `BroadcastChannel`을 활용해 한 탭에서 로그아웃/정보 수정 시 모든 탭에 즉시 반영
 
-### Refresh Token 보안 전략
+### 사용자 계정 관리
 
-#### 1. DB 해시 저장
-
-- Refresh Token 원문은 **절대 DB에 저장하지 않음**
-- DB 유출 시에도 토큰 재사용 불가
-
-#### 2. Rotation 적용
-
-- Refresh 요청 시마다 **새 토큰 발급**
-- 이전 Refresh Token 즉시 무효화
-- 탈취된 토큰 **재사용 공격 방어**
-
-#### 3. 다중 세션 유지
-
-- 서버는 다중 기기/브라우저 로그인 허용
-- 같은 브라우저 내 (멀티 탭) 로그인/로그아웃 동기화
-
-#### 4. 로그아웃 무효화
-
-- DB의 Refresh Token 제거
-- 쿠키 즉시 삭제
-
-#### 5. Refresh Token 검증 실패 시
-
-- Access Token 즉시 제거
-- 전역 인증 상태 초기화
-- 로그인 화면으로 리다이렉트
-
----
-
-### 사용자 계정 관리 보안 정책
-
-- **회원정보 수정**
-
-  - Access Token 기반 인증 필수
-  - 수정 성공 시 최신 사용자 정보 반환
-  - 프론트엔드 전역 상태 및 멀티 탭 간 즉시 동기화
-
-- **비밀번호 변경**
-
-  - 기존 비밀번호 검증 필수
-  - 현재: 사용자 편의 중심 세션 유지
-  - 보안 강화 필요 시 서버 측에서 해당 유저의 모든 리프레시 토큰 무효 로직 추가 가능
-
-- **회원 탈퇴**
-
-  - 비밀번호 재확인 필수
-  - 사용자 계정 삭제
-  - DB에 저장된 Refresh Token 즉시 제거
-  - 모든 클라이언트 세션 강제 로그아웃 처리
-
----
-
-### 인증 흐름
-
-```text
-[Login]
-  └─ 이메일 / 비밀번호 검증
-      ├─ Access Token 발급 (Body)
-      └─ Refresh Token 발급 (HttpOnly Cookie)
-           └─ bcrypt 해시 후 DB 저장
-
-[Access Token 만료]
-  └─ /auth/refresh
-      ├─ 쿠키의 Refresh Token 검증
-      ├─ DB 해시와 비교
-      ├─ 새 Access / Refresh Token 발급
-      └─ DB 토큰 교체 (Rotation)
-
-[Logout]
-  ├─ DB Refresh Token 제거
-  └─ 쿠키 삭제
-
-[Delete Account]
-  ├─ 비밀번호 재확인
-  ├─ User 데이터 삭제
-  ├─ DB Refresh Token 제거
-  └─ 모든 탭/세션 로그아웃
-```
-
----
-
-### 보안 테스트 및 검증
-
-- Refresh Token 재사용 공격 → **401 Unauthorized**
-- DB에서 토큰 임의 변경 → 다음 Refresh 시 로그아웃 처리
-- 로그아웃 후 Refresh 시도 → 실패
-- 테스트 API는 모두 제거 후 Postman/curl/브라우저로 검증
-
----
-
-## Frontend 상태 관리 & UX 보강
-
-### 프론트엔드 인증 상태 동기화
-
-- React Context 기반 전역 인증 상태 관리
-- Axios Interceptor로 Access Token 만료 자동 처리
-- **BroadcastChannel 기반 멀티 탭 동기화**
-
-  - 로그인 / 로그아웃
-  - 회원정보 수정
-  - 탈퇴 시 즉시 상태 반영
-
-> **설계 장점**
-> : `storage` 이벤트보다 응답 속도가 빠르고, 문자열뿐만 아니라 객체(User Object)를 직접 전달할 수 있어 추가적인 서버 요청(GET /me)을 최소화함
-
----
-
-## 데이터 아키텍처 개선
-
-- 기존 문제: `localStorage` 중심, 기기 변경 시 데이터 단절, 사용자 식별 불가
-- 개선: 인증 기반 사용자 식별 → 서버 저장 → 기기 무관 기록 조회 → 로그인 시 데이터 연속성 확보
-
-* **현재 상태**: 게임 기록 저장 기능은 **향후 구현 예정**입니다.
-
----
-
-## 인지 지표 설계 (집중도 점수)
-
-- 정확도(60%) + 반응속도(40%) 가중치 적용
-- 무작위 클릭 방지
-- 미진행 게임 데이터 필터링
-
-```ts
-skillScore = accuracy * 0.6 + normalizedReactionTime * 0.4;
-```
+- **회원정보 수정**: Access Token 인증 필요, 전역 상태 즉시 갱신
+- **비밀번호 변경**: 기존 비밀번호 검증 필수, 필요 시 세션 무효화
+- **회원 탈퇴**: 비밀번호 재확인, 계정 및 토큰 삭제, 모든 세션 로그아웃
 
 ---
 
 ## Database Schema (MongoDB)
 
-### User
+### 1. User (사용자)
 
-- `email`: String (Unique, required, Indexed)
-- `password`: String (Hashed with bcrypt)
-- `currentHashedRefreshToken` (nullable)
-- `name`: String (required)
-- `nickname`: String (required)
-- `profileImage`: String
+인증 및 세션 관리를 위한 핵심 스키마입니다.
 
-### Record
+- `email`: 유저 식별자 (Unique, Indexed)
+- `password`: bcrypt 해시 비밀번호
+- `nickname`, `profileImage`: 프로필 정보
+- `currentHashedRefreshToken`: 보안 인증용 해시 토큰
 
-- `userId`: ObjectId (Ref: User)
-- `difficulty`: String (easy, normal, hard)
-- `clearTime`: Number
-- `flipCount`: Number
-- `createdAt`: Date (Timestamps)
+### 2. Game
 
-> Record 스키마는 최소 필드로 설계되었으며,
-> 실제 서비스 단계에서는 반응속도 분포, 세션 메타데이터 등이 확장될 예정입니다.
+등록된 인지 훈련 게임의 메타 정보를 관리합니다.
+
+- `code`: URL 및 시스템 식별용 코드 (예: `card-matching`)
+- `name`: 사용자 노출용 게임명
+- 확장 대비:
+  - `isActive`: 활성화 여부 (시즌제/이벤트 대응)
+  - `validFrom`, `validTo`: 운영 가능 기간 설정
+
+### 3. GameDifficultyConfig (난이도 설정)
+
+각 게임의 난이도별 규칙 및 **집중도 점수 가중치**를 저장합니다.
+
+- `gameId`: 해당 게임 참조 (Ref: Game)
+- `difficulty`: 난이도 구분 (`EASY`, `NORMAL`, `HARD`)
+- **게임 규칙**: 카드 쌍, 시간 제한, 미리보기 시간 등
+- **점수 가중치**: `scoreMultiplier`, `accuracyWeight`, `reactionWeight`, `penaltyWeight`
+
+### 4. GameRecord (게임 결과 기록)
+
+사용자의 플레이 데이터와 분석된 인지 지표를 저장합니다.
+
+- `userId`, `gameId`: 참조 식별자 (Indexed)
+- `difficulty`: 난이도 구분 (`EASY`, `NORMAL`, `HARD`)
+- `duration`: 게인 진행 시간
+- `skillScore`: 계산된 최종 집중도 점수
+- `avgReactionTime`, `accuracy`: 핵심 분석 데이터
+- `totalAttempts` `correctMatches` `failedAttempts`: 카드매칭 게임 전용 데이터
+- 확장 대비:
+  - `reactionTimeDetails`: 개별 반응 시간 배열 (표준편차 분석용)
+  - `stdDev`, `consistencyScore`: 인지 안정성, 일관성 지표
+  - `theme`: 게임 테마 설정
+
+### 5. Index 전략
+
+- **성능 최적화 (Indexing Strategy)**
+  - **사용자별 분석**:
+    `{ userId: 1, gameId: 1, difficulty: 1, createdAt: -1 }`
+  - **랭킹**:
+    `{ gameId: 1, difficulty: 1, skillScore: -1 }`
+
+---
+
+## E2E 인증 테스트 시나리오 (Playwright)
+
+1. **인증 흐름**: 로그인 유지, 새로고침 시 세션 복구, 토큰 만료 시 자동 갱신 테스트
+2. **보안 경계**: 비로그인 시 성과 페이지 접근 차단 및 리다이렉트 검증
+3. **동기화**: 멀티탭 환경에서의 실시간 상태 공유 확인
 
 ---
 
 ## 실행 방법
 
-### 환경 변수
+### 환경 변수 설정
 
 ```bash
-# server
-MONGO_URI=
-JWT_SECRET=
-JWT_REFRESH_SECRET=
+# server/.env
+MONGO_URI=mongodb://localhost:27017/cognitive-app
+JWT_SECRET=your_access_secret
+JWT_REFRESH_SECRET=your_refresh_secret
 
-# client
-VITE_APP_API_URL=
+# client/.env
+VITE_APP_API_URL=http://localhost:3000
+
 ```
 
 ### 설치 및 구동
 
 ```bash
-# Server 실행
-cd server
-npm install
-npm run start:dev
+# Backend
+cd server && npm install && npm run start:dev
 
-# Client 실행
-cd client
-npm install
-npm run dev
+# Frontend
+cd client && npm install && npm run dev
+
 ```
 
 ---
 
-## 화면 구성 (현재 개발 상태)
-
-### 홈 & 게임 플레이
-
-<table>
-<tr>
-  <td align="center">홈 화면 (full)</td>
-  <td align="center">게임 대기 (min)</td>
-  <td align="center">플레이 (min)</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/home.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/game_preview.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/game_play.png" width="180"/></td>
-</tr>
-</table>
-
-### 단일 게임 결과
-
-<table>
-<tr>
-  <td align="center">결과 1 (min)</td>
-  <td align="center">결과 2 (min)</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/game_result_1.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/game_result_2.png" width="180"/></td>
-</tr>
-</table>
-
-### 성과 분석
-
-<table>
-<tr>
-  <td align="center">실력 향상 판정 (min)</td>
-  <td align="center">분석 대시보드 1 (min)</td>
-  <td align="center">분석 대시보드 2 (min)</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/game_performance_1.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/game_performance_2.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/game_performance_3.png" width="180"/></td>
-</tr>
-</table>
-
-### 로그인 / 회원가입
-
-<table>
-<tr>
-  <td align="center">회원 가입 (full)</td>
-  <td align="center">로그인 (full)</td>
-  <td align="center">로그인 메뉴 (min)</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/signup.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/login.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/login_after.png" width="180"/></td>
-</tr>
-</table>
-
-### 회원 정보 수정
-
-- 닉네임 / 프로필 이미지 변경
-- 비밀번호 변경 (기존 비밀번호 검증)
-- 회원 탈퇴 (비밀번호 재확인 + 즉시 로그아웃)
-
-<table>
-<tr>
-  <td align="center">회원 정보</td>
-  <td align="center">비밀번호 변경</td>
-  <td align="center">회원 탈퇴</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/profile_base.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/profile_pw_change.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/profile_del_modal.png" width="180"/></td>
-</tr>
-</table>
-
-### toast
-
-<table>
-<tr>
-  <td align="center">비밀번호 규칙 (min)</td>
-  <td align="center">로그인 불일치 (min)</td>
-</tr>
-<tr>
-  <td align="center" valign="top"><img src="./docs/images/jwt_toast_1.png" width="180"/></td>
-  <td align="center" valign="top"><img src="./docs/images/jwt_toast_2.png" width="180"/></td>
-</tr>
-</table>
----
-
-## 설계 포인트 (Insight)
+## 설계 인사이트
 
 > "데이터를 관찰하기 위해 게임을 설계하다"
 
-- 프론트엔드에서 수집된 미세한 반응 시간 → 백엔드 → DB → 신뢰 가능한 성과 지표
-- 비동기 통신 예외 처리 및 타입 안전성 확보
-- 게임 로직과 통계 로직 분리: 게임은 측정만, 해석은 성과 화면에서 수행
-- 단일 지표가 아닌 복합 지표 기반 실력 판단
-- “유효 게임” 필터링으로 통계 신뢰도 확보
+이 프로젝트는 단순히 카드 맞추기 게임을 구현하는 것을 넘어, **사용자의 미세한 반응 데이터를 어떻게 의미 있는 지표로 전환할 것인가**에 대한 고민을 담고 있습니다. "유효 게임" 필터링과 이동 평균선 분석을 통해 통계적 노이즈를 제거하고, 사용자에게 객관적인 인지 변화 추이를 제공하는 것이 본 프로젝트의 핵심 가치입니다.
 
----
+- 게임은 측정만 수행
+- 해석과 판단은 서버에서 일관되게 처리
+- 통계적 노이즈 제거를 위한 유효 게임 필터링
+- 단일 점수가 아닌 **복합 지표 기반 인지 평가**
 
-### 프로젝트 구조 다이어그램
-
-```text
-[      Game Screen    ]
-          │
-          ▼
-┌─────────────────────┐
-    Game Logic Layer
-   - 카드 상태 관리
-   - 타이머 관리
-   - 매칭 판정
-   - 정확도 계산
-   - 반응 속도 기록
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-      Game Result
-   - totalAttempts
-   - correctMatches
-   - failedAttempts
-   - accuracy
-   - avgReactionTime
-   - duration
-   - skillScore
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-     Local Storage
-└─────────┬───────────┘
-          ▼
-┌─────────────────────┐
-    Performance Page
-   - 난이도 필터
-   - 실력 판정
-   - 최근 N회 추이
-   - 차트 시각화
-   - 평균 비교
-   - 최고/최저 반응 속도
-└─────────────────────┘
-```
-
----
-
-### 집중도 점수 설계
-
-```ts
-skillScore = accuracy * 0.6 + normalizedReactionTime * 0.4;
-
-accuracy =
-  attempts === 0
-    ? 0
-    : Math.round((correctMatches / attempts) * (correctMatches / pairs) * 100);
-
-normalizedReactionTime =
-  sec <= 0.4
-    ? 100
-    : sec >= 2.0
-    ? 0
-    : Math.round(100 - ((sec - 0.4) / 1.6) * 100);
-```
-
-- 정확도 비중 ↑, 반응속도 보조
-- 미진행 게임 제외 → 통계 신뢰도 확보
-- 최근 N회 이동 평균선 → 실력 추세 시각화
-
-> 현재 가중치는 **실험적 설정**이며,
-> 실제 서비스 환경에서는 A/B 테스트를 통해 조정 가능한 구조입니다.
-
----
-
-### 실력 향상 판정 로직
-
-- 단기(2~4회): 첫 기록 대비 마지막 기록 변화율 ±20% 이상 → 향상/저하
-- 장기(5회 이상): 전반부 평균 vs 후반부 평균 비교 → 향상/저하/유지
-- 변화율 0% → 메시지 생략
-
----
-
-## E2E 테스트 (Playwright)
-
-- **설치**
-
-```bash
-cd client
-npm create playwright@latest
-npm install @playwright/test
-npx playwright install
-```
-
-- **환경 파일**: `.env.test` (`CLIENT_URL`, `SERVER_URL`, `TEST_EMAIL`, `TEST_PASSWORD`)
-
-- **테스트 폴더**: `e2e`
-
-- **실행**: `npx playwright test` 또는 `npx playwright test --ui`
-
-- **주요 시나리오**
-
-  1. 비로그인 → 보호된 페이지 접근 → 로그인 페이지 이동
-  2. 로그인 → 보호된 페이지 접근 가능
-  3. 새로고침 → 로그인 유지
-  4. accessToken 만료 → refresh → 페이지 유지
-  5. refresh 실패 → 강제 로그아웃
-  6. 멀티탭 로그아웃 동기화
-
----
-
-## 향후 개선 아이디어
-
-- 대용량 데이터 최적화
-- 다중 기기 로그인 허용 → Refresh Token 테이블 분리
-- IP/User-Agent 기반 추가 검증
-- 단위 테스트(Auth/Service)
-- 랭킹/공유/댓글 기능
-- 반응속도 일관성 지표 추가
-- 게임 중 이탈 처리 정책
-- 게임 종류 확장 대비 공통 인터페이스 설계
-
----
-
-## 마무리
-
-이 프로젝트는
-**게임을 만들기 위해 데이터를 쓰는 것이 아니라, 데이터를 관찰하기 위해 게임을 만든 사례**입니다.
-
-JWT 인증, Refresh Token 보안 전략, 프론트엔드 상태 관리, 통계적 노이즈 제거까지 하나의 사용자 경험으로 통합하는 데 중점을 두었습니다.
+이 프로젝트의 핵심은 “게임 구현”이 아니라  
+**인지 데이터를 신뢰 가능한 지표로 만들기 위한 설계와 검증**에 있습니다.

@@ -3,49 +3,76 @@ import {
   Post,
   Get,
   Body,
+  Query,
   UseGuards,
   Req,
   Param,
+  ParseEnumPipe,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import type { ValidatedUser } from '../auth/interfaces/jwt-payload.interface';
+import { Difficulty } from './enum/difficulty.enum';
 import { RecordsService } from './records.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CreateRecordDto } from './dto/create-record.dto';
-import type { Request } from 'express';
-
-// 기록 저장 API에 JWT 보호 적용
+import { CreateGameRecordDto } from './dto/create-record.dto';
 
 @Controller('records')
 export class RecordsController {
-  constructor(private recordsService: RecordsService) {}
+  constructor(private readonly recordsService: RecordsService) {}
 
+  /** 게임 기록 생성 */
   @Post()
-  @UseGuards(JwtAuthGuard) // 로그인한 사용자만 기록 저장 가능
-  async saveRecord(@Body() createRecordDto: CreateRecordDto) {
-    return await this.recordsService.create(createRecordDto);
-  }
-
-  // 랭킹 조회는 누구나 가능
-  @Get('top10/:difficulty') // 랭킹 조회 (GET /records/top10)
-  async getRankings(@Param('difficulty') difficulty?: string) {
-    const result = await this.recordsService.findTop10(difficulty);
-    console.log('📦 DB에서 꺼낸 데이터:', result); // 서버 터미널에 찍힙니다.
-    return result;
-  }
-
-  @Get('my/:difficulty')
-  @UseGuards(JwtAuthGuard) // 로그인 필수
-  async getMyRecords(
-    @Req() req: Request,
-    @Param('difficulty') difficulty?: string,
+  @UseGuards(AuthGuard('jwt'))
+  async create(
+    @Req() req: Request & { user: ValidatedUser },
+    @Body() dto: CreateGameRecordDto,
   ) {
-    // req.user가 존재하고 email이 있는지 안전하게 확인
-    const user = req.user as { email: string };
+    const userId: string = req.user.userId; // AuthGuard에서 JWT payload로 들어온 userId
+    return this.recordsService.create(userId, dto);
+  }
 
-    if (!user || !user.email) {
-      throw new Error('유저 정보를 찾을 수 없습니다.');
-    }
+  /** 게임 ID */
+  @Get('games/:code')
+  async getGame(@Param('code') code: string) {
+    return this.recordsService.getGame(code);
+  }
 
-    console.log(`👤 ${user.email}의 기록 조회 중...`);
-    return await this.recordsService.findByUser(user.email, difficulty);
+  /** 게임 난이도 설정 */
+  @Get('gameConfig')
+  async getGameConfig(
+    @Query('gameId') gameId: string,
+    @Query(
+      'difficulty',
+      new ParseEnumPipe(Difficulty, { errorHttpStatusCode: 400 }),
+    )
+    difficulty: Difficulty,
+  ) {
+    return this.recordsService.getGameConfig(gameId, difficulty);
+  }
+
+  /** 대시보드 조회 (최근 기록, 내 통계, 랭킹) */
+  @Get('dashboard')
+  @UseGuards(AuthGuard('jwt'))
+  async getDashboard(
+    @Req() req: Request & { user: ValidatedUser },
+    @Query('gameId') gameId: string,
+    @Query(
+      'difficulty',
+      new ParseEnumPipe(Difficulty, { errorHttpStatusCode: 400 }),
+    )
+    difficulty: Difficulty,
+  ) {
+    const userId: string = req.user.userId;
+    return this.recordsService.getDashboard(userId, gameId, difficulty);
+  }
+
+  /** 최근 30일 난이도별 평균 기록 조회 */
+  @Get('stats/summary')
+  @UseGuards(AuthGuard('jwt'))
+  async getStatsSummary(
+    @Req() req: Request & { user: ValidatedUser },
+    @Query('gameId') gameId: string,
+  ) {
+    const userId: string = req.user.userId;
+    return this.recordsService.getMyStatsAllDifficulties(userId, gameId);
   }
 }

@@ -9,6 +9,7 @@ import { AuthInitializer } from './auth/AuthInitializer';
 import { useAuthFailureHandler } from './auth/useAuthFailureHandler';
 import { useAuth } from './auth/useAuth';
 import Spinner from './components/ui/Spinner';
+import { GameProvider } from './components/game/GameProvider';
 
 function AuthBootstrap() {
   const { isLoading } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
       <Toaster position="top-center" />
       
       <AuthProvider> {/* 반드시 Router 안에 배치 */}
+      <GameProvider>
         <AuthInitializer /> {/* 상태 변경 */}
         <AuthFailureHandler />
 
@@ -50,6 +52,7 @@ export default function App() {
           <AppRouter />
         </AppLayout>
 
+      </GameProvider>
       </AuthProvider>
     </BrowserRouter>
   );
