@@ -136,9 +136,10 @@ export function Profile() {
         </CardToggle>
 
         <div>
-          <label className="block text-sm font-medium mb-3">닉네임</label>
+          <label htmlFor="nickname-change" className="block text-sm font-medium mb-3">닉네임</label>
           <input
             type="text"
+            id="nickname-change"
             className={inputStyle}
             onChange={handleNicknameChange}
             required
@@ -159,7 +160,7 @@ export function Profile() {
         <div className="mt-16 border-t border-red-100 pt-8">
           <div className="flex justify-between items-center">
             <div>
-              <h4 className="text-lg font-bold text-red-600">위험 구역</h4>
+              <b className="text-lg font-bold text-red-600">위험 구역</b>
               <p className="text-sm text-surface-500">
                 계정을 삭제하면 다시 되돌릴 수 없습니다.
               </p>
@@ -228,3 +229,5 @@ export function Profile() {
     </PageContainer>
   );
 }
+
+export default Profile;

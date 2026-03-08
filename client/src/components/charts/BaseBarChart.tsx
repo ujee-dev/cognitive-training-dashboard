@@ -1,4 +1,4 @@
-//import React from "react";
+import React from "react";
 import {
   BarChart,
   Bar,
@@ -6,7 +6,6 @@ import {
   YAxis,
   Tooltip,
   Cell,
-  ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
 
@@ -22,8 +21,7 @@ interface BaseBarChartProps<T> {
   barColor?: (item: T) => string;
 }
 
-
-export function BaseBarChart<T>({
+function BaseBarChartInner<T>({
   data,
   xKey,
   yKey,
@@ -39,22 +37,38 @@ export function BaseBarChart<T>({
     );
   }
 
+  const tooltipFormatter = (value: number | undefined) => [
+    `${value} ${yUnit}`,
+    "",
+  ];
+  const tickStyle = { fill: "#9ca3af", fontSize: 12 };
+  const strokeStyle = { stroke: "e5e7eb"};
+
   return (
     <div className={`w-full h-[${height}px]`}>
-      <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="gray" />
+
+        <BarChart
+          width="100%" height={height}
+          data={data}
+          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid
+            vertical={false} stroke="e5e7eb"
+          />
           <XAxis
             dataKey={xKey as string}
-            tick={{ fill: "#9ca3af", fontSize: 12 }}
-            axisLine={{ stroke: "#e5e7eb" }}
+            tick={tickStyle}
+            axisLine={strokeStyle}
           />
           <YAxis
-            tick={{ fill: "#9ca3af", fontSize: 12 }}
-            axisLine={{ stroke: "#e5e7eb" }}
+            tick={tickStyle}
+            axisLine={strokeStyle}
             unit={yUnit}
           />
-          <Tooltip formatter={(value: number | undefined) => [`${value} ${yUnit}`, ""]} />
+          <Tooltip
+            formatter={tooltipFormatter}
+            cursor={false}
+            animationDuration={0}
+          />
 
           <Bar dataKey={yKey as string}>
             {data.map((entry, index) => (
@@ -65,7 +79,9 @@ export function BaseBarChart<T>({
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+
     </div>
   );
 }
+
+export const BaseBarChart = React.memo(BaseBarChartInner) as typeof BaseBarChartInner;

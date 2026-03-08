@@ -1,3 +1,5 @@
+
+import React from "react";
 import { Line } from "recharts";
 import { BaseLineChart } from "../../components/charts/BaseLineChart";
 
@@ -12,7 +14,10 @@ interface Props {
   overallAvg: number;
 }
 
-export function ReactionTrendChart({ data, overallAvg }: Props) {
+export const ReactionTrendChart = React.memo(function ReactionTrendChart({
+  data,
+  overallAvg
+}: Props) {
   return (
     <BaseLineChart<ReactionTrendPoint>
       data={data}
@@ -20,8 +25,10 @@ export function ReactionTrendChart({ data, overallAvg }: Props) {
       tooltipUnit="초"
       avg={overallAvg}
     >
-      <Line type="monotone" dataKey="raw" stroke="#93c5fd" name="개별 반응속도" dot />
-      <Line type="monotone" dataKey="smooth" stroke="#2563eb" strokeWidth={3} name="이동 평균" dot={false} />
+      <Line type="monotone" dataKey="raw" stroke="#93c5fd" name="개별 반응속도" dot={{ r: 2 }} isAnimationActive={false} />
+      <Line type="monotone" dataKey="smooth" stroke="#2563eb" strokeWidth={3} name="이동 평균" dot={false} isAnimationActive={false} />
     </BaseLineChart>
-  );
-}
+   );
+});
+
+export default ReactionTrendChart;

@@ -39,12 +39,19 @@ export class UsersController {
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `profile-${uniqueSuffix}${extname(file.originalname)}`);
+          let ext = extname(file.originalname);
+
+          // webp 대응
+          if (file.mimetype === 'image/webp') {
+            ext = '.webp';
+          }
+
+          cb(null, `profile-${uniqueSuffix}${ext}`);
         },
       }),
       // 이미지 파일 형식 제한 (보안 강화)
       fileFilter: (req, file, cb) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (!file.mimetype.startsWith('image/')) {
           return cb(
             new BadRequestException('이미지 파일만 업로드 가능합니다.'),
             false,

@@ -1,5 +1,6 @@
 // 게임 플레이 중 사용
 import type { Difficulty } from "../config/gameConfig";
+export type { Difficulty } from "../config/gameConfig";
 
 export type GameStatus = 'preview' | 'playing' | 'finished';
 

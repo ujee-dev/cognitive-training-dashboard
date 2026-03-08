@@ -5,8 +5,10 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "types": ["node"],
+    "moduleResolution": "node",  // 중요: Node 방식으로 모듈을 찾으라고 명시
+    "types": ["node", "@playwright/test"],
     "typeRoots": ["node_modules/@types"],
+    "esModuleInterop": true,  // process 같은 CommonJS 모듈 호환성
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

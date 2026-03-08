@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import type { Difficulty } from '../config/gameConfig';
 import clsx from 'clsx';
 
@@ -11,9 +11,9 @@ import { useGame } from "../components/game/useGame";
 import type { DashboardResponseDto, RecordLean } from '../types/Dashboard';
 
 // chart
-import { ReactionTrendChart } from '../ui/charts/ReactionTrendChart';
-import { AccuracyTrendChart } from '../ui/charts/AccuracyTrendChart';
-import { SkillScoreTrendChart } from '../ui/charts/SkillScoreTrendChart';
+const ReactionTrendChart = lazy(() => import("../ui/charts/ReactionTrendChart"));
+const AccuracyTrendChart = lazy(() => import("../ui/charts/AccuracyTrendChart"));
+const SkillScoreTrendChart = lazy(() => import("../ui/charts/SkillScoreTrendChart"));
 
 // stats UI
 import { RecentTimeline } from '../ui/performance/RecentTimeline';
@@ -131,8 +131,14 @@ export function Performance() {
 
       {/* 난이도 선택 */}
       <div className="px-4 space-x-5 text-sm">
-        <span className='font-semibold'>난이도 선택를 선택하세요. </span>{" "}
+        {/* 1. 라벨을 만들고 htmlFor를 지정합니다. */}
+        <label htmlFor="difficulty-select" className="font-semibold">
+          난이도 선택를 선택하세요. 
+        </label>{" "}
+
+        {/* 2. select 태그에 동일한 id를 부여합니다. */}
         <select
+          id="difficulty-select"
           value={difficulty}
           onChange={e => setDifficulty(e.target.value as Difficulty)}
           className="border px-2 py-1 rounded text-sm mx-auto">
@@ -178,8 +184,9 @@ export function Performance() {
               <span className="flex items-center gap-2">
                 {r.profileImage && (
                   <img
-                    src={`${API_BASE_URL}${r.profileImage}?t=${Date.now()}`}
+                    src={`${API_BASE_URL}${r.profileImage}`} // 성능 우선을 위해 ?t=${Date.now()} 제거
                     alt="프로필"
+                    loading="lazy"
                     className="w-7 h-7 rounded-full object-cover"
                   />
                 )}
@@ -196,7 +203,8 @@ export function Performance() {
       </Card>
 
       <Card title="최근 10 회 집중도 추이" variant="default" titleVariant='base'>
-        <SkillScoreTrendChart
+        <Suspense>
+          <SkillScoreTrendChart
           data={skillScoreTrendData}
           overallAvg={dashboardData.avgAccuracy30dValue} />
           { (skillScoreTrendData.length > 0) &&
@@ -205,30 +213,35 @@ export function Performance() {
               right="실제 값"
             />
           }
+        </Suspense>
       </Card>
 
       <Card title="최근 10 회 반응 속도 추이" variant="default" titleVariant='base'>
-        <ReactionTrendChart
-          data={reactionTrendData}
-          overallAvg={dashboardData.avgReaction30dValue} />
+        <Suspense>
+          <ReactionTrendChart
+            data={reactionTrendData}
+            overallAvg={dashboardData.avgReaction30dValue} />
           { (reactionTrendData.length > 0) &&
             <DescriptionRow
               left="이동 평균선 = 기준선 최근 5개의 평균 값"
               right="실제 값"
             />
           }
+        </Suspense>
       </Card>
 
       <Card title="최근 10 회 정확도 추이" variant="default" titleVariant='base'>
-        <AccuracyTrendChart
-          data={accuracyTrendData}
-          overallAvg={dashboardData.overallAvgSkillScore} />
-          { (accuracyTrendData.length > 0) &&
-            <DescriptionRow
-              left="이동 평균선 = 기준선 최근 5개의 평균 값"
-              right="실제 값"
-            />
-          }
+        <Suspense>
+          <AccuracyTrendChart
+            data={accuracyTrendData}
+            overallAvg={dashboardData.overallAvgSkillScore} />
+            { (accuracyTrendData.length > 0) &&
+              <DescriptionRow
+                left="이동 평균선 = 기준선 최근 5개의 평균 값"
+                right="실제 값"
+              />
+            }
+        </Suspense>
       </Card>
 
       <Card title="반응 속도 평균 비교" variant="brandDark" titleVariant='titleBrand'>
@@ -249,3 +262,5 @@ export function Performance() {
     </PageContainer>
   );
 }
+
+export default Performance;

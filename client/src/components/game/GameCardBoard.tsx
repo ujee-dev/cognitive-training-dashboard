@@ -1,4 +1,4 @@
-import backImage from "../../assets/game/cards/BACK.png";
+import backImage from "../../assets/game/cards/BACK.webp";
 import type { CardItem } from '../../types/game';
 
 interface Props {
@@ -25,6 +25,7 @@ export default function GameCard({ cards, onCardClick }: Props) {
             src={card.isFlipped || card.isMatched ? card.image : backImage}
             alt="card"
             className="bg-[#ffffff]"
+            loading="lazy"
           />
         </button>
       ))}

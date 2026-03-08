@@ -1,3 +1,4 @@
+import React from "react";
 import { Line } from "recharts";
 import { BaseLineChart } from "../../components/charts/BaseLineChart";
 
@@ -12,7 +13,10 @@ interface Props {
   overallAvg: number;
 }
 
-export function SkillScoreTrendChart({ data, overallAvg }: Props) {
+export const SkillScoreTrendChart = React.memo(function SkillScoreTrendChart({
+  data,
+  overallAvg
+}: Props) {
   return (
     <BaseLineChart<SkillScoreTrendPoint>
       data={data}
@@ -22,10 +26,12 @@ export function SkillScoreTrendChart({ data, overallAvg }: Props) {
     >
       <Line
         type="monotone" dataKey="raw" stroke="#93c5fd"
-        name="개별 집중도" dot />
+        name="개별 집중도" dot={{ r: 2 }} isAnimationActive={false} />
       <Line type="monotone" dataKey="smooth"
-        stroke="#2563eb" strokeWidth={3} name="이동 평균" dot={false} />
+        stroke="#2563eb" strokeWidth={3} name="이동 평균" dot={false} isAnimationActive={false} />
     </BaseLineChart>
-  );
-}
+   );
+});
+
+export default SkillScoreTrendChart;
 

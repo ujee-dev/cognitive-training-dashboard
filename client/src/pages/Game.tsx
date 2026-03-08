@@ -20,3 +20,5 @@ export function Game() {
     </GamePageContainer>
   );
 }
+
+export default Game;

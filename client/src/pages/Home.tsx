@@ -27,9 +27,14 @@ export function Home() {
 
       {/* 컨트롤 박스 */}
       <div className="flex items-center gap-2 text-sm">
-        <span className='ml-7 font-semibold'>난이도 선택 - </span>
+        {/* 1. 라벨을 만들고 htmlFor를 지정합니다. */}
+        <label htmlFor="difficulty-select" className="ml-7 font-semibold">
+          난이도 선택 -
+        </label>{" "}
 
+        {/* 2. select 태그에 동일한 id를 부여합니다. */}
         <select
+          id="difficulty-select"
           value={difficulty}
           className="bg-surface-600 border-surface-900 rounded
            text-white px-3 py-1
@@ -54,3 +59,5 @@ export function Home() {
 
   );
 }
+
+export default Home;

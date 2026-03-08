@@ -1,0 +1,7 @@
+# User-agent: [크롤러 이름]
+# Disallow: [접근을 막을 경로]
+# Allow: [허용 경로 선택 사항]
+# Sitemap: [사이트맵 URL 선택 사항]
+
+User-agent: *
+Disallow: /

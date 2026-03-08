@@ -1,3 +1,12 @@
+/** 2026.03.05
+ * 변경 포인트 정리
+  setSaved(true)를 async 함수 안에서 호출 → cascading render 경고 제거
+  서버/로컬 저장 로직을 한 곳에서 async로 처리
+  finished 확인, avgReactionTime 체크, togglePause 등 기존 로직 유지
+  다른 컴포넌트에서 saved 상태 참조 가능
+  navigate state 처리 그대로 유지 → 차트 및 결과 페이지 정상 작동
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -31,17 +40,13 @@ export function GameCore({ difficulty, onReset }: Props) {
   const { user } = useAuth();
   const { gameInfo, setGame } = useGame();
 
-  const [saved, setSaved] = useState(false);
-
-  const navigate = useNavigate();
-
-  // 변수명 충돌 방지를 위해 config 상태 명칭을 명확히 함
   const [gameConfig, setConfig] = useState<GameConfig | Difficulty>(difficulty);
 
-  // useCardLogic에서 필요한 것들을 바로 꺼내 쓰면 'game' 변수 선언 자체를 피할 수 있습니다.
+  const navigate = useNavigate();
   const game = useCardLogic(gameConfig);
   const { finished, getResult, togglePause } = game;
 
+  // --- 게임 설정 가져오기 ---
   useEffect(() => {
     let mounted = true;
 
@@ -50,17 +55,12 @@ export function GameCore({ difficulty, onReset }: Props) {
         const gameInfo = await recordApi.getGame("card-matching");
         if (mounted) setGame(gameInfo);
 
-        // 백엔드 응답: { gameConfig: { timeLimit: 50, ... } }
         const response = await recordApi.getGameConfig(gameInfo.id, difficulty);
-        
-        if (!response || !response.gameConfig) {
-          return handleApiError('게임 설정을 찾을 수 없습니다.');
+        if (!response?.gameConfig) {
+          return handleApiError("게임 설정을 찾을 수 없습니다.");
         }
 
-        if (mounted) {
-          // response가 아니라 response.gameConfig를 설정해야 함
-          setConfig(response.gameConfig); 
-        }
+        if (mounted) setConfig(response.gameConfig);
       } catch (e) {
         handleApiError(e);
       }
@@ -69,19 +69,61 @@ export function GameCore({ difficulty, onReset }: Props) {
     return () => { mounted = false; };
   }, [difficulty, setGame]);
 
+  // --- 게임 종료 후 결과 처리 ---
   useEffect(() => {
     if (!finished) return;
 
     const result = getResult();
     togglePause();
 
-    const avgReactionTime = calcAverage(result.reactionTimes); // 배열 평균
+    const avgReactionTime = calcAverage(result.reactionTimes);
 
-    // 유효 여부 판단
-    if (avgReactionTime + result.accuracy > 0) {
+    const handleResult = async () => {
+      if (avgReactionTime + result.accuracy <= 0) {
+        // 유효하지 않은 게임
+        navigate("/result", {
+          state: {
+            id: null,
+            message1: "유효하지 않은 게임입니다.",
+            message2: "확인할 수 있는 게임 결과가 없습니다.",
+          },
+          replace: true,
+        });
+        return;
+      }
+
       if (user) {
-        setSaved(true);
+        // 서버 저장
+        try {
+          if (!gameInfo) throw new Error("게임 정보가 없습니다.");
+
+          const savedRecord: Record = {
+            gameId: gameInfo.id,
+            difficulty: result.difficulty,
+            duration: result.duration,
+            accuracy: result.accuracy,
+            totalAttempts: result.totalAttempts,
+            correctMatches: result.correctMatches,
+            failedAttempts: result.failedAttempts,
+            avgReactionTime,
+          };
+
+          const nowRecord = await recordApi.saveRecord(savedRecord);
+
+          navigate("/result", {
+            state: {
+              rec: recordToView(nowRecord),
+              diff: result.difficulty,
+              gameId: gameInfo.id,
+            },
+            replace: true,
+          });
+
+        } catch (error) {
+          handleApiError(error);
+        }
       } else {
+        // 로컬 저장
         const skillScore = calcSkillScore(
           result.accuracy,
           avgReactionTime,
@@ -101,14 +143,12 @@ export function GameCore({ difficulty, onReset }: Props) {
           totalAttempts: result.totalAttempts,
           correctMatches: result.correctMatches,
           failedAttempts: result.failedAttempts,
-          avgReactionTime: avgReactionTime,
-          skillScore: skillScore,
+          avgReactionTime,
+          skillScore,
         };
 
         saveResult(stored);
 
-        // navigate()의 두 번쨰 인자는 NavigateOptions 타입이고
-        // id 같은 커스텀 같은 options가 아니라 state 안에 넣어야 함
         navigate("/result", {
           state: {
             id: stored.id,
@@ -117,60 +157,10 @@ export function GameCore({ difficulty, onReset }: Props) {
           replace: true,
         });
       }
-    } else {
-      // 유효하지 않은 게임 메시지 전달
-      navigate("/result", {
-        state: {
-          id: null,
-          message1: "유효하지 않은 게임입니다.",
-          message2: "확인할 수 있는 게임 결과가 없습니다.",
-        },
-        replace: true,
-      });
-    }
-  }, [finished, navigate, saved]);
+    };
 
-  useEffect(() => {
-    if (!saved) return;
-    if (!finished) return;
-
-    const result = getResult();
-    togglePause();
-    
-    const avgReactionTime = calcAverage(result.reactionTimes);
-
-    (async () => {
-      if (!gameInfo) {
-        return handleApiError("게임 정보가 없습니다.");
-      }
-
-      const savedRecord: Record = { // skillscore는 서버에서 계산
-        gameId: gameInfo.id,
-        difficulty: result.difficulty,
-        duration: result.duration,
-        accuracy: result.accuracy,
-        totalAttempts: result.totalAttempts,
-        correctMatches: result.correctMatches,
-        failedAttempts: result.failedAttempts,
-        avgReactionTime: avgReactionTime,
-      };
-
-      try {
-        const nowRecord = await recordApi.saveRecord(savedRecord);
-
-        navigate("/result", {
-          state: {
-            rec: recordToView(nowRecord), // 방금 생성된 서버 데이터
-            diff: result.difficulty,
-            gameId: gameInfo.id, // 이걸 반드시 포함시켜야 차트가 즉시 뜹니다!
-          },
-          replace: true,
-        });
-      } catch (error) {
-        handleApiError(error);
-      }
-    })(); // 즉시 실행
-  }, [saved]);
+    handleResult();
+  }, [finished, user, gameInfo, navigate]);
 
   return (
     <>

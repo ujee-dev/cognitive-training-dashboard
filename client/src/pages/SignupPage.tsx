@@ -53,7 +53,7 @@ export function SignupPage() {
       </div>
 
       {/* 회원가입 폼 */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
         {/* 이름/닉네임 50:50 */}
         <div className="grid grid-cols-2 gap-4">
           <div className="w-full">
@@ -86,6 +86,7 @@ export function SignupPage() {
           <input
             type="email"
             name="email"
+            autoComplete="email"
             className={inputStyle}
             onChange={handleChange}
             required
@@ -99,6 +100,7 @@ export function SignupPage() {
           <input
             type="password"
             name="password"
+            autoComplete="new-password"
             className={inputStyle}
             onChange={handleChange}
             required
@@ -135,3 +137,5 @@ export function SignupPage() {
   );
 
 }
+
+export default SignupPage;

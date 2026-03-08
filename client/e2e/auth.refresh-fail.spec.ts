@@ -12,5 +12,5 @@ test("refresh 실패 → 세션 만료 → 로그인 이동", async ({ page }) =
   await page.goto("/performance");
 
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByText("로그인하기")).toBeVisible();
+  await expect(page.getByText("회원가입")).toBeVisible();
 });

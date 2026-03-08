@@ -1,30 +1,37 @@
-import { Routes, Route } from "react-router-dom";
-import { Home } from "../pages/Home";
-import { Game } from "../pages/Game";
-import { Result } from "../pages/Result";
-import { Performance } from "../pages/Performance";
-import { ResponsiveAuthPage } from "../pages/ResponsiveAuthPage";
+import { createBrowserRouter } from "react-router-dom";
+import { lazy } from "react";
+
+import AppLayout from "../components/layout/AppLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
-import { SignupPage } from "../pages/SignupPage";
-import { Profile } from "../pages/Profile";
 
-const AppRouter = () => {
-  return (
-    <Routes>
-      {/* 공개 라우트 */}
-      <Route path="/" element={<Home />} />
-      <Route path="/game" element={<Game />} />
-      <Route path="/result" element={<Result />} />
-      <Route path="/login" element={<ResponsiveAuthPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+// 기존 import 페이지를 lazy 불러오기로 변경
+const Home = lazy(() => import('../pages/Home'));
+const Game = lazy(() => import('../pages/Game'));
+const Result = lazy(() => import('../pages/Result'));
+const Performance = lazy(() => import('../pages/Performance'));
+const ResponsiveAuthPage = lazy(() => import('../pages/ResponsiveAuthPage'));
+const SignupPage = lazy(() => import('../pages/SignupPage'));
+const Profile = lazy(() => import('../pages/Profile'));
 
-      {/* 보호된 라우트 */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/performance" element={<Performance />} />
-        <Route path="/profile" element={<Profile />} />
-      </Route>
-    </Routes>
-  );
-};
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <AppLayout />, // 공통 레이아웃
+    children: [
+      { index: true, element: <Home /> },
+      { path: "/game", element: <Game /> },
+      { path: "/result", element: <Result /> },
+      { path: "/login", element: <ResponsiveAuthPage /> },
+      { path: "/signup", element: <SignupPage /> },
 
-export default AppRouter;
+      // 인증이 필요한 라우트 묶기
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: "performance", element: <Performance /> },
+          { path: "profile", element: <Profile /> },
+        ],
+      },
+    ],
+  },
+]);

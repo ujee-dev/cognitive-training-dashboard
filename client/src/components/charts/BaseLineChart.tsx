@@ -6,7 +6,6 @@ import {
   YAxis,
   Tooltip,
   ReferenceLine,
-  ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
 
@@ -20,7 +19,7 @@ interface BaseLineChartProps<T> {
   height?: number;
 }
 
-export function BaseLineChart<T>({
+function BaseLineChartInner<T>({
   data,
   xKey,
   yUnit,
@@ -38,23 +37,37 @@ export function BaseLineChart<T>({
   }
 
   const resolvedXKey = xKey || ("index" as keyof T);
+  const tooltipFormatter = (value: number | undefined) => [
+    `${value} ${tooltipUnit}`,
+    "",
+  ];
+  const tickStyle = { fill: "#9ca3af", fontSize: 12 };
 
   return (
     <div className="w-full h-[250px]">
-      <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="gray" />
+      
+        <LineChart
+          width="100%" height={height}
+          data={data}
+          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+          <CartesianGrid
+            vertical={false} stroke="#e5e7eb"
+          />
           <XAxis
             dataKey={resolvedXKey as string}
-            tick={{ fill: "#9ca3af", fontSize: 12 }}
+            tick={tickStyle}
             axisLine={{ stroke: "#e5e7eb" }}
           />
           <YAxis
             unit={yUnit}
-            tick={{ fill: "#9ca3af", fontSize: 12 }}
+            tick={tickStyle}
             axisLine={{ stroke: "#e5e7eb" }}
           />
-          <Tooltip formatter={(value: number | undefined) => [`${value} ${tooltipUnit}`, ""]} />
+          <Tooltip
+            formatter={tooltipFormatter}
+            cursor={false}
+            animationDuration={0}
+          />
           {children}
           {avg !== undefined && (
             <ReferenceLine
@@ -66,7 +79,9 @@ export function BaseLineChart<T>({
             />
           )}
         </LineChart>
-      </ResponsiveContainer>
+      
     </div>
   );
 }
+
+export const BaseLineChart = React.memo(BaseLineChartInner) as typeof BaseLineChartInner;

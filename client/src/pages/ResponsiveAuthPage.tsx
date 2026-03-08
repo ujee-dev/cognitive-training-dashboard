@@ -67,12 +67,13 @@ export function ResponsiveAuthPage() {
   return (
     <AuthLayoutWithSidebar>
       <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4" autoComplete="on">
         <div>
           <label className="block text-sm font-medium mb-1">이메일</label>
           <input
             type="email"
             value={email}
+            autoComplete="email"
             onChange={e => setEmail(e.target.value)}
             className={inputStyle}
             placeholder="example@email.com"
@@ -85,6 +86,7 @@ export function ResponsiveAuthPage() {
           <input
             type="password"
             value={password}
+            autoComplete="current-password"
             onChange={e => setPassword(e.target.value)}
             className={inputStyle}
             placeholder="••••••••"
@@ -113,3 +115,5 @@ export function ResponsiveAuthPage() {
     </AuthLayoutWithSidebar>
   );
 };
+
+export default ResponsiveAuthPage;

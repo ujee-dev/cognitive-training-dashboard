@@ -25,6 +25,20 @@ import type { GameResultView } from "../types/resultView";
 import { storedToView } from "../types/storage";
 import type { DifficultyStats } from "../utils/calcStatsByDifficulty";
 
+// Normalize 함수를 만들어서 서버/로컬 데이터를 하나의 타입으로 통일
+function normalizeChartData(
+  data: GameResultView[] | DifficultyStats[],
+  isServerData: boolean
+): DifficultyStats[] {
+  if (isServerData) {
+    // 서버 데이터라고 판단되는 경우
+    return data as DifficultyStats[];
+  } else {
+    // 로컬 데이터 변환
+    return buildDifficultyChartData(data as GameResultView[]);
+  }
+}
+
 export function Result() {
   const { user } = useAuth();
   const location = useLocation();
@@ -98,13 +112,7 @@ export function Result() {
   useEffect(() => {
     if (!chartResults) return;
 
-    if (user) {
-      // 타입의 수가 맞지 않아서 경고: 사용하지 않는 필드이기에 무시
-      setChartData(chartResults);
-    } else {
-      // 로컬 데이터는 GameResultView[] → ServerDifficultyStats[]로 변환
-      setChartData(buildDifficultyChartData(chartResults));
-    }
+    setChartData(normalizeChartData(chartResults, !!user));
   }, [chartResults, user]);
 
   // --- 조건부 렌더링 ---
@@ -160,3 +168,5 @@ export function Result() {
     </PageContainer>
   );
 }
+
+export default Result;

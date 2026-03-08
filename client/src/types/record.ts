@@ -11,7 +11,7 @@ export interface Record {
   totalAttempts: number;
   correctMatches: number;
   failedAttempts: number;
-  skillScore: number;
+  skillScore?: number;
   theme?: string; // 테마값
   /* 반응속도 분산지표 고도화 작업용 - DB 생성시에는 필드 참고 미리 생성 */
   reactionTimeDetails?: number[]; // 개별 반응 시간들 (표준편차 재계산용)
@@ -29,6 +29,6 @@ export function recordToView(rec: Record): GameResultView {
     correctMatches: rec.correctMatches,
     failedAttempts: rec.failedAttempts,
     avgReactionTime: rec.avgReactionTime,
-    skillScore: rec.skillScore,
+     ...(rec.skillScore !== undefined && { skillScore: rec.skillScore }),
   };
 }

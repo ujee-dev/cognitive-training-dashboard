@@ -4,11 +4,17 @@ import { authApi } from "./api";
 import { authEventBus } from "../auth/authEventBus";
 import { sessionState } from "../auth/sessionState";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
 });
 
+/**
+ * Request interceptor
+ * accessToken 자동 주입
+ */
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
@@ -17,6 +23,10 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Response interceptor
+ * 401 → refresh → 재시도
+ */
 instance.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -27,6 +37,7 @@ instance.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // 401 아니면 그대로 에러
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }

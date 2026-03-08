@@ -43,6 +43,7 @@ const Header: React.FC = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          aria-label="메뉴 열기"
         >
           <svg
             className="w-6 h-6"

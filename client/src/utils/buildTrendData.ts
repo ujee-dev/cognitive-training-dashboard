@@ -15,7 +15,7 @@ export function buildTrendData(
   const raw = results.map(r => r[key] as number);
   const smoothed = movingAverage(raw, 5);
 
-  return results.map((r, i) => ({
+  return results.map((_, i) => ({
     index: i + 1,
     raw: raw[i],
     smooth: smoothed[i],

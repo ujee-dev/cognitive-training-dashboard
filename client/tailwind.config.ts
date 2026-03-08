@@ -7,8 +7,8 @@ export default {
 			"./src/**/*.{js,ts,jsx,tsx}",],
   theme: {
     extend: {
-      fontFamail: {
-        pretendard: ["Pretendard"],
+      fontFamily: {
+        pretendard: ["Pretendard", "system-ui", "sans-serif"],
       },
     },
   },

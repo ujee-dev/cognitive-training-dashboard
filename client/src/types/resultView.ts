@@ -12,7 +12,7 @@ export interface GameResultView {
   correctMatches: number;
   failedAttempts: number;
 
-  skillScore: number;
+  skillScore?: number;
 
   // 선택 필드
   playedAt?: string;

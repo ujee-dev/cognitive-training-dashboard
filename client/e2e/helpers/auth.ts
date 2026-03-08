@@ -1,6 +1,6 @@
 import { Page, request as playwrightRequest } from "@playwright/test";
 
-const SERVER_URL = process.env.SERVER_URL || "http://localhost:3000";
+const SERVER_URL = process.env.SERVER_URL || "https://localhost:3000";
 const email = process.env.TEST_EMAIL || "playwright@test.com";
 const pw = process.env.TEST_PASSWORD || "qwer1234";
 
@@ -8,13 +8,14 @@ export async function login(page: Page) {
   await page.goto("/login");
   await page.getByPlaceholder("example@email.com").fill(email);
   await page.getByPlaceholder("••••••••").fill(pw);
-  await page.getByRole("button", { name: "로그인하기" }).click();
+  await page.getByRole("button", { name: "로그인" }).click();
   await page.waitForURL("/");
 }
 
 export async function loginByApi(page: Page) {
   const apiContext = await playwrightRequest.newContext({
     baseURL: SERVER_URL,
+    ignoreHTTPSErrors: true, // self-signed https 허용
     extraHTTPHeaders: {
       "Content-Type": "application/json", // JSON 보내기
     },
