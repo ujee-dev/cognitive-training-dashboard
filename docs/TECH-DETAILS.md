@@ -1,3 +1,5 @@
+본 문서는 프로젝트의 **시스템 구조, 설계 의도, 데이터 모델, 성능 최적화 구현**을 설명합니다.
+
 # [← 메인으로 돌아가기](../README.md)
 
 # 카드 매칭 인지 훈련 & 성과 분석 시스템 (Full-Stack)
@@ -6,11 +8,24 @@
 > 사용자의 인지 반응 데이터를 신뢰 가능한 성과 지표로 분석하는
 > 카드 매칭 기반 인지 훈련 웹 애플리케이션
 
-단순한 게임 플레이를 넘어, **반응속도와 정확도 데이터를 수집하고, 난이도별 가중치 및 패널티를 적용한 '집중도 점수(Skill Score)' 알고리즘으로 분석**하는 것에 초점을 맞추고 있습니다.
+이 프로젝트는 단순한 게임 플레이를 넘어, **반응 속도와 정확도 데이터를 수집하고, 난이도별 가중치 및 패널티를 적용한 '집중도 점수(Skill Score)' 알고리즘으로 분석**하는 것에 초점을 맞추고 있습니다.
 
 ---
 
-## 프로젝트 목적 & 개요
+## 프로젝트 개요 & 목적
+
+- **아키텍처**
+  - 본 프로젝트는 **React SPA + NestJS API 서버 아키텍처**로 구성됩니다.
+
+```
+React (Frontend)
+   │
+   │ Axios (Interceptor)
+   │
+NestJS API Server
+   │
+MongoDB
+```
 
 - **Frontend**
   - 게임 UI, 사용자 상호작용, 데이터 시각화
@@ -35,7 +50,7 @@
 - **Core**: React 19, TypeScript, Vite
 - **UI**: Tailwind CSS
 - **Network**: Axios (Interceptor 기반 인증 및 토큰 갱신)
-- **Visualization**: Recharts (추이 시각화)
+- **Visualization**: Recharts (데이터 추이 시각화)
 
 ### Backend (`server/`)
 
@@ -45,7 +60,7 @@
 
 ### 기타
 
-- Playwright(E2E 테스트)
+- Playwright (E2E 인증 테스트)
 
 ---
 
@@ -54,7 +69,7 @@
 ### 1. 집중도 점수(Skill Score) 산출
 
 - **목적**:
-  - 반응속도와 정확도의 균형
+  - 반응 속도와 정확도의 균형
   - 난이도별 변별력 확보
   - 무작위 클릭 억제
   - 음수 점수 방지
@@ -63,7 +78,7 @@
 
 - **반응 점수(Reaction Score)**
 
-  반응속도를 난이도별 기준값에 따라 **0~100 점수로 정규화**
+  반응 속도를 난이도별 기준값에 따라 **0~100 점수로 정규화**
 
 ```ts
 const scale = REACTION_SCALES[difficulty];
@@ -78,7 +93,7 @@ const raw =
 return Math.max(scale.minScore ?? 0, Math.round(raw));
 ```
 
-> 반응 시간이 빠를수록 높은 점수를, 느릴수록 낮은 점수를 부여하여
+> 반응 속도가 빠를수록 높은 점수를, 느릴수록 낮은 점수를 부여하여
 > 난이도별 기준에 따라 상대적인 반응 성능을 비교할 수 있도록 설계하였습니다.
 
 - **최종 집중도 점수 (Skill Score)**:
@@ -102,8 +117,9 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 - **최소 점수 보장**
   - 0점 미만 방지 (`Math.max(0, ...)`)
 
-> 현재 가중치는 **실험적 설정**이며,
-> A/B 테스트 및 사용자 데이터에 따라 조정 가능하도록 설계하였습니다.
+> 현재 가중치는 **실험적으로 설정**된 값이며,
+> 향후 A/B 테스트 및 축적된 사용자 데이터를 바탕으로
+> 정교하게 조정할 수 있도록 유연하게 설계하였습니다.
 
 ### 2. 데이터 제공 정책
 
@@ -133,7 +149,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
   <td align="center">실력 판정, 순위</td>
   <td align="center">최근 10회 기록</td>
   <td align="center">추이 그래프</td>
-  <td align="center">비교 (반응속도, 점수)</td>
+  <td align="center">비교 (반응 속도, 점수)</td>
 </tr>
 <tr>
   <td align="center" valign="top"><img src="./images/game_performance_1.png" width="180"/></td>
@@ -142,6 +158,10 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
   <td align="center" valign="top"><img src="./images/game_performance_4.png" width="180"/></td>
 </tr>
 </table>
+
+> **시각화**
+>
+> Recharts를 활용해 사용자의 성장 곡선을 한눈에 파악할 수 있도록 구성했습니다.
 
 ---
 
@@ -226,7 +246,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 - `userId`, `gameId`: 참조 식별자 (Indexed)
 - `difficulty`: 난이도 구분 (`EASY`, `NORMAL`, `HARD`)
-- `duration`: 게인 진행 시간
+- `duration`: 게임 진행 시간
 - `skillScore`: 계산된 최종 집중도 점수
 - `avgReactionTime`, `accuracy`: 핵심 분석 데이터
 - `totalAttempts` `correctMatches` `failedAttempts`: 카드매칭 게임 전용 데이터
@@ -245,6 +265,171 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
+## Frontend 성능 최적화
+
+대시보드 페이지는 차트와 사용자 데이터를 동시에 렌더링하기 때문에
+초기 로딩과 렌더링 비용을 줄이기 위한 최적화 작업을 수행했습니다.
+
+---
+
+### 1. Route 기반 Code Splitting
+
+#### 문제
+
+React SPA 구조에서 모든 페이지 코드가 초기 번들에 포함되면
+초기 로딩 성능이 저하될 수 있습니다.
+
+---
+
+#### 해결
+
+페이지 단위 코드 분리를 위해 다음 구조를 적용했습니다.
+
+- `createBrowserRouter`
+- `React.lazy`
+
+예시
+
+```tsx
+const Performance = lazy(() => import("../pages/Performance"));
+```
+
+---
+
+#### 결과
+
+Preview Lighthouse 기준
+
+| Page | Before | After  |
+| ---- | ------ | ------ |
+| Main | 18+ 점 | 85+ 점 |
+
+초기 로딩 성능이 개선되었습니다.
+
+---
+
+### 2. 번들 분리 (Vite manualChunks)
+
+#### 문제
+
+차트 라이브러리(Recharts, D3)는 번들 크기가 큰 편이며
+React Router와 함께 번들에 포함될 경우 캐시 효율이 떨어질 수 있습니다.
+
+---
+
+#### 해결
+
+Vite `manualChunks` 설정을 통해 라이브러리를 분리했습니다.
+
+```ts
+manualChunks(id) {
+  if (id.includes('node_modules')) {
+    if (id.includes('recharts') || id.includes('d3')) {
+      return 'charts';
+    }
+    if (id.includes('react-router')) {
+      return 'router';
+    }
+    return 'vendor';
+  }
+},
+```
+
+---
+
+#### 결과
+
+- 공통 라이브러리 캐싱 효율 증가
+- 페이지 변경 시 재다운로드 감소
+
+---
+
+### 3. 차트 렌더링 최적화
+
+#### 문제
+
+대시보드 페이지에서 여러 차트를 렌더링할 때
+데이터 변경 시 불필요한 재렌더링이 발생할 수 있습니다.
+
+---
+
+#### 해결
+
+차트 컴포넌트에 `React.memo`를 적용했습니다.
+
+```tsx
+export const BaseLineChart = React.memo(function BaseLineChart(...)
+```
+
+또한 차트 컨테이너 구조를 단순화했습니다.
+
+---
+
+#### 결과
+
+차트 렌더링 비용이 감소했습니다.
+
+| Page        | Before | After  |
+| ----------- | ------ | ------ |
+| Performance | 4 점   | 86+ 점 |
+
+---
+
+### 4. 이미지 리소스 최적화
+
+#### 문제
+
+프로필 이미지가 원본 해상도로 업로드될 경우
+표시 크기에 비해 파일 크기가 커질 수 있습니다.
+
+---
+
+#### 해결
+
+이미지 업로드 시 다음과 같은 최적화 및 제한 사항을 적용했습니다.
+
+- WebP 변환
+- 이미지 해상도 제한
+- 파일 용량 제한
+
+---
+
+#### 결과
+
+이미지 다운로드 크기가 감소했습니다.
+
+---
+
+### 5. 폰트 리소스 최적화
+
+#### 문제
+
+Pretendard 폰트를 개별 폰트 파일로 사용할 경우  
+여러 weight 파일이 로드되면서 네트워크 요청 수가 증가할 수 있습니다.
+
+#### 해결
+
+Pretendard 폰트를 **Variable Font** 방식으로 변경하여  
+단일 폰트 파일로 weight를 처리하도록 구성했습니다.
+
+#### 결과
+
+- 폰트 파일 수 감소
+- 네트워크 요청 수 감소
+
+---
+
+## 접근성 및 SEO 개선
+
+Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
+
+- input `autocomplete` 속성 추가
+- meta description 설정
+- robots.txt 추가
+- HTTPS 개발 환경 적용 (mkcert)
+
+---
+
 ## E2E 인증 테스트 시나리오 (Playwright)
 
 1. **인증 흐름**: 로그인 유지, 새로고침 시 세션 복구, 토큰 만료 시 자동 갱신 테스트
@@ -253,9 +438,9 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## 실행 방법
+### 실행 방법
 
-### 환경 변수 설정
+#### 환경 변수 설정
 
 ```bash
 # server/.env
@@ -264,11 +449,11 @@ JWT_SECRET=your_access_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 
 # client/.env
-VITE_APP_API_URL=http://localhost:3000
+VITE_APP_API_URL=https://localhost:3000
 
 ```
 
-### 설치 및 구동
+#### 설치 및 구동
 
 ```bash
 # Backend
@@ -285,23 +470,24 @@ cd client && npm install && npm run dev
 
 - HttpOnly Cookie 기반 인증 전환
 - 배포 환경 구성
+- k6 성능 테스트 수행
+- 테스트 확장 (과부하, 더미 데이터)
 - 인증 보안 강화
 - 로직 검증 통계화
-- k6 성능 테스트 수행
-- E2E 테스트 확장
 
 ---
 
 ## 설계 인사이트
 
-> "데이터를 관찰하기 위해 게임을 설계하다"
+> "측정은 게임이, 해석은 서버가"
 
-이 프로젝트는 단순히 카드 맞추기 게임을 구현하는 것을 넘어, **사용자의 미세한 반응 데이터를 어떻게 의미 있는 지표로 전환할 것인가**에 대한 고민을 담고 있습니다. "유효 게임" 필터링과 이동 평균선 분석을 통해 통계적 노이즈를 제거하고, 사용자에게 객관적인 인지 변화 추이를 제공하는 것이 본 프로젝트의 핵심 가치입니다.
+본 프로젝트는 단순한 게임 구현을 넘어 사용자의 미세한 반응 데이터를 의미 있는 지표로 전환하는 것에 집중했습니다.
 
-- 게임은 측정만 수행
-- 해석과 판단은 서버에서 일관되게 처리
-- 통계적 노이즈 제거를 위한 유효 게임 필터링
-- 단일 점수가 아닌 **복합 지표 기반 인지 평가**
+- **데이터 무결성**: 모든 판정과 가공은 서버에서 수행하여 클라이언트 측의 조작 가능성을 차단했습니다.
+
+- **노이즈 제거**: 단순 이동 평균선 도입을 통해 일시적인 컨디션 난조로 인한 통계적 왜곡을 방지했습니다.
+
+- **복합 지표**: 단일 점수가 아닌 정확도와 속도를 결합한 'Skill Score'를 통해 다각적인 인지 평가를 구현했습니다.
 
 이 프로젝트의 핵심은 “게임 구현”이 아니라  
 **인지 데이터를 신뢰 가능한 지표로 만들기 위한 설계와 검증**에 있습니다.
