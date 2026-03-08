@@ -7,6 +7,9 @@ out/
 Thumbs.db
 *.log
 
+# 인증서 파일 (SSL certificates: mkcert)
+*.pem
+
 # --- [ 2. 클라이언트 (Client) ] ---
 client/node_modules/
 client/src/pages/ForbiddenPage.tsx
@@ -21,6 +24,8 @@ client/.tmp/
 # 클라이언트 테스트: Playwright HTML 보고서 / 스크린샷 / trace
 client/test-results/
 client/playwright-report/
+# 성능 분석 보고 (Build analysis report)
+client/stats.html
 
  --- [ 3. 서버 (Server) ] ---
 server/node_modules/
