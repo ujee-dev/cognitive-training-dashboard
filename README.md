@@ -1,38 +1,102 @@
-# React·Node.js 기반 학습 프로젝트: 인지 훈련 성과 분석 시스템
+# React · NestJS 기반 학습 프로젝트: 인지 훈련 성과 분석 시스템
 
-> 카드 매칭 기반 인지 훈련 게임 데이터를 저장하고 분석하여
-> **사용자 성과를 시각화하는 풀스택 웹 애플리케이션**입니다.
+**'React · NestJS 기반 풀스택 웹 애플리케이션'**
+
+> 카드 매칭 게임 데이터를 수집·분석하여 **사용자 성과를 시각화**하며,
 >
-> 단순 기능 구현을 넘어 **데이터 신뢰성, 인증 구조, 프론트엔드 성능 최적화**를 중심으로 설계했습니다.
+> **데이터 신뢰성, 인증 구조, 프론트엔드 성능 최적화**를 중심으로 설계하였습니다.
 
 ---
 
 ## 프로젝트 개요
 
-이 프로젝트는 카드 매칭 게임에서 발생하는 사용자 반응 데이터를 기반으로
-사용자의 집중도 및 수행 성과를 분석하는 웹 서비스입니다.
+### 목적
 
-프로젝트 구현 과정에서 다음과 같은 기술적 문제를 해결하는 데 집중했습니다.
+단순 게임 구현이 아닌, 사용자의 반응 데이터를 신뢰할 수 있는 성과 지표(집중도 점수: Skill Score)로 분석하여 개인별 학습 성과를 객관적으로 평가하고 시각화하는 것을 목표로 합니다.
 
-- 서버 기반 데이터 관리로 **기록 신뢰성 확보**
-- JWT 기반 인증 시스템 설계
-- React 대시보드(Dashboard)의 **렌더링 성능 최적화**
-- Lighthouse 지표 개선을 통한 **웹 성능 및 접근성 향상**
-- Playwright 기반 E2E 테스트를 통한 **인증 흐름 검증**
+### 주요 기능
 
-## 아키텍처
+- 카드 매칭 기반 인지 훈련 게임 진행 및 기록 저장
+- 서버 중심 데이터 관리로 **기록 신뢰성 확보**
+- 사용자 반응 데이터를 분석하는 **성과 산출 알고리즘 설계**
+  - 난이도 기반 점수 산출 및 집중도 분석
+  - 실시간 랭킹 및 성장(성과) 그래프 제공
+- **JWT Access / Refresh Token** 기반 사용자 인증
 
-- 본 프로젝트는 **React SPA + NestJS API 서버 아키텍처**로 구성됩니다.
+> 기술 구현의 상세 내용은 [TECH DETAILS](./docs/TECH-DETAILS.md)에서 확인할 수 있습니다.
+
+---
+
+### 아키텍처
+
+- **React SPA + NestJS REST API 서버**
 
 ```
-React (Frontend)
+React SPA (Frontend)
    │
    │ Axios (Interceptor)
    │
 NestJS API Server
    │
-MongoDB
+MongoDB (Mongoose)
+
 ```
+
+### 폴더 구조
+
+- **Frontend (`client/`)**
+
+```
+client/                 # Frontend (React SPA)
+  e2e/                  # Playwright 기반 E2E 테스트
+  src/
+    api/                # Axios 등 API 호출 관련 모듈
+    assets/             # 이미지, 폰트 리소스
+    auth/               # 인증 관련 훅/컴포넌트
+    components/         # UI 구성 요소
+      charts/           # Recharts 컴포넌트
+      game/             # 게임 관련 UI 컴포넌트
+      layout/           # 레이아웃 관련 컴포넌트(App, Header 등)
+      ui/               # 공통 UI 요소(Button, Card, Spinner 등)
+    config/             # 환경 설정 (게임 설정)
+    pages/              # 라우트 페이지 컴포넌트
+    hooks/              # 게임 로직, 타이머 훅
+    routes/             # createBrowserRouter 기반 라우팅
+    types/              # TypeScript 타입 정의
+    ui/                 # UI 스타일/테마
+    utils/              # 공통 유틸리티 함수
+```
+
+---
+
+- **Backend (`server/src/`)**
+
+```
+server/src/             # Backend (NestJS API)
+  auth/                 # 인증 모듈
+    dto/                # 데이터 전송 객체 정의
+    interfaces/         # 타입/인터페이스
+    strategies/         # JWT, Passport 전략 구현
+  records/              # 게임 기록/성과 관리
+    dto/                # 기록 생성 및 성과 관련 DTO
+    enum/               # Enum 정의
+    schema/             # 게임/난이도 DB 스키마
+    util/               # 유틸 함수 (reaction-scale)
+  users/                # 사용자 관리 모듈
+    dto/                # 사용자 관련 DTO
+    schema/             # 사용자 DB 스키마
+```
+
+---
+
+### 핵심 구현 포인트
+
+- **JWT Access / Refresh Token** 인증 시스템 및 Refresh Rotation 적용
+- 사용자 반응 데이터 기반 **집중도 점수(Skill Score) 산출 알고리즘 설계**
+- 서버 기반 데이터 관리로 **기록 신뢰성 확보**
+- **Route Code Splitting** 및 Vite 번들 분리로 SPA 초기 로딩 성능 개선
+- React Dashboard 렌더링 최적화, **Lighthouse Performance 18 → 85+ 개선**
+- Playwright 기반 **E2E 인증 테스트**로 인증 흐름 검증
 
 ---
 
@@ -78,127 +142,6 @@ MongoDB
 
 ---
 
-## 주요 기능
-
-- 카드 매칭 기반 인지 훈련 게임
-- 사용자 게임 기록 저장
-- 난이도 기반 점수 계산
-- 성과 데이터 차트 시각화
-- JWT 기반 사용자 인증 (Access / Refresh Token)
-
----
-
-## 주요 Lighthouse 지표 개선
-
-### 1. 대시보드 초기 로딩 성능 문제
-
-#### 문제
-
-React SPA 구조에서 모든 페이지와 차트 라이브러리가
-초기 번들에 포함되면서 **초기 로딩 성능이 저하되는 문제(TBT 상승)가 있었습니다.**
-
-Lighthouse 측정 결과
-
-- Main Page Performance: **18** 점
-
-#### 해결
-
-초기 번들 크기를 줄이기 위해 **Route 기반 Code Splitting**을 적용했습니다.
-
-- `createBrowserRouter`
-- `React.lazy`
-
-또한 Vite `manualChunks` 설정을 통해 번들을 분리했습니다.
-
-분리 대상
-
-- `recharts` & `d3`
-- `react-router`
-- `vendor`
-
-#### 결과
-
-초기 번들 로딩 부담이 감소하여
-
-| Page | Performance     |
-| ---- | --------------- |
-| Main | **18 → 85+** 점 |
-
-으로 개선되었습니다.
-
----
-
-### 2. 차트 렌더링 성능 문제
-
-#### 문제
-
-대시보드 페이지에서 여러 Recharts 차트를 렌더링하면서
-데이터 변경 시 불필요한 재렌더링이 발생했습니다.
-
-#### 해결
-
-차트 렌더링 비용을 줄이기 위해 다음 작업을 진행했습니다.
-
-- Chart 컴포넌트를 `React.memo`로 감싸 재렌더링 방지
-- `ResponsiveContainer` 의존성 제거
-
-#### 결과
-
-차트 렌더링 시 불필요한 재렌더링이 감소하여
-대시보드 페이지 성능이 개선되었습니다.
-
-| Page             | Performance    |
-| ---------------- | -------------- |
-| Performance Page | **4 → 86+** 점 |
-
----
-
-### 3. 프로필 이미지 리소스 최적화
-
-#### 문제
-
-프로필 이미지 업로드 시 원본 이미지를 그대로 사용할 경우
-이미지 파일 크기가 커져 네트워크 비용이 증가할 수 있습니다.
-
-#### 해결
-
-이미지 업로드 과정에서 다음 처리를 적용했습니다.
-
-- WebP 변환
-- 해상도 제한
-- 파일 용량 제한
-
-#### 결과
-
-이미지 리소스 크기를 줄여
-네트워크 전송량을 감소시켰습니다.
-
-### 4. 추가 리소스 최적화
-
-- Pretendard Variable Font 적용
-- 게임 퍼즐 이미지 WebP 변환
-
----
-
-### Lighthouse 성능 개선 결과 (Preview 기준, 단위: 점)
-
-| Page        | Before (Dev) | After (Preview) |
-| ----------- | ------------ | --------------- |
-| Main        | 18+          | **85+**         |
-| Game        | 31           | **86**          |
-| Performance | 4            | **86+**         |
-| Profile     | 35           | **89**          |
-
-### 기타 지표 (Preview 기준, 단위: 점)
-
-| Category       | Score        |
-| -------------- | ------------ |
-| Accessibility  | **92 ~ 95**  |
-| Best Practices | **96 ~ 100** |
-| SEO            | **91+**      |
-
----
-
 ## 기술 스택
 
 ### Frontend
@@ -209,43 +152,37 @@ React 19, TypeScript, Vite, Tailwind CSS, Recharts, Axios, React Router
 
 Node.js 22, NestJS 11, MongoDB, Mongoose, Passport (JWT / Refresh Token), bcrypt, class-validator
 
-### DevOps/Auth
+### DevOps/Auth/Test
 
-mkcert (Local HTTPS), JWT (Access/Refresh), Playwright (E2E)
+mkcert (Local HTTPS), JWT (Access/Refresh), Playwright (E2E), Lighthouse
 
 ---
 
-## 개발 환경
+## 성과 & 지표 (Lighthouse)
 
-HTTPS 기반 개발 환경을 구성했습니다.
-
-- `mkcert`를 이용한 Local HTTPS
-- env 기반 API 주소 관리
-
-```
-VITE_API_URL=https://localhost:3000
-```
+- **Performance**: Main Page 18 → **85+**, Performance page 4 → **86+**
+- **접근성 & Best Practices**: **92+**, **96+**
+- 서버 사이드 판정으로 **데이터 신뢰성 확보**
+- 난이도별 가중치 및 페널티 적용, 변별력 있는 점수 제공
 
 ---
 
 ## 프로젝트 문서
 
-보다 상세한 기술 구현 내용은 다음 문서에서 확인할 수 있습니다.
+보다 상세한 기술 구현 내용, 성과 산출 알고리즘, 성능 최적화 과정은  
+아래 문서에서 확인할 수 있습니다.
 
-```
-./docs/TECH-DETAILS.md
-```
+[ [TECH DETAILS](./docs/TECH-DETAILS.md) ] `docs/TECH-DETAILS.md`
 
 ---
 
 ## 프로젝트 목표
 
-이 프로젝트는 다음 역량을 학습하고 정리하기 위해 진행되었습니다.
+이 프로젝트를 통해 다음 역량을 학습하고 정리했습니다.
 
-- React 기반 SPA 구조 설계
-- NestJS API 서버 설계
-- JWT 인증 시스템 구현
-- 데이터 시각화 대시보드 개발
+- React SPA 구조 및 NestJS API 서버 설계
+- JWT 인증 구조와 Refresh Token Rotation 설계
+- 데이터 시각화 대시보드 구현
 - Lighthouse 기반 웹 성능 최적화 경험
 
 ---
@@ -258,4 +195,4 @@ VITE_API_URL=https://localhost:3000
 
 > **보안과 사용자 경험의 절충**
 >
-> JWT Rotation을 통해 보안을 강화하면서도, BroadcastChannel을 이용해 멀티탭 환경에서의 사용자 이탈을 방지하는 UX 최적화를 고민했습니다.
+> JWT Rotation을 통해 보안을 강화하면서, BroadcastChannel을 이용하여 멀티탭 환경에서의 사용자 이탈을 방지하는 UX 최적화를 고민했습니다.

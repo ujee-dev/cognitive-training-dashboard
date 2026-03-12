@@ -12,10 +12,11 @@
 
 ---
 
-## 프로젝트 개요 & 목적
+## 프로젝트 개요
 
-- **아키텍처**
-  - 본 프로젝트는 **React SPA + NestJS API 서버 아키텍처**로 구성됩니다.
+### 아키텍처
+
+- 본 프로젝트는 **React SPA + NestJS API 서버 아키텍처**로 구성됩니다.
 
 ```
 React (Frontend)
@@ -27,19 +28,69 @@ NestJS API Server
 MongoDB
 ```
 
-- **Frontend**
-  - 게임 UI, 사용자 상호작용, 데이터 시각화
+### 폴더 구조 및 역할
 
-- **Backend**
-  - JWT 인증 / Refresh Token 관리
-  - 사용자 계정 관리
-  - 게임 기록 저장
-  - 성과 분석 및 랭킹 계산
+- **Frontend (`client/`)**
 
-- **핵심 주제 & 목적**
-  - 인증 안전성 확보 & 상태 일관성 유지
-  - 인지 데이터의 통계적 신뢰도 확보: 서버 중심 데이터 처리
-  - 난이도별 변별력 있는 점수 설계
+```
+client/                 # Frontend (React SPA)
+  e2e/                  # Playwright 기반 E2E 테스트
+  src/
+    api/                # Axios 등 API 호출 관련 모듈
+    assets/             # 이미지, 폰트 리소스
+    auth/               # 인증 관련 훅/컴포넌트
+    components/         # UI 구성 요소
+      charts/           # Recharts 컴포넌트
+      game/             # 게임 관련 UI 컴포넌트
+      layout/           # 레이아웃 관련 컴포넌트(App, Header 등)
+      ui/               # 공통 UI 요소(Button, Card, Spinner 등)
+    config/             # 환경 설정 (게임 설정)
+    pages/              # 라우트 페이지 컴포넌트
+    hooks/              # 게임 로직, 타이머 훅
+    routes/             # createBrowserRouter 기반 라우팅
+    types/              # TypeScript 타입 정의
+    ui/                 # UI 스타일/테마
+    utils/              # 공통 유틸리티 함수
+```
+
+- UI 컴포넌트
+- 게임 로직과 사용자 상호작용
+- 인증
+- 데이터 시각화
+- 테스트
+
+---
+
+- **Backend (`server/src/`)**
+
+```
+server/src/             # Backend (NestJS API)
+  auth/                 # 인증 모듈
+    dto/                # 데이터 전송 객체 정의
+    interfaces/         # 타입/인터페이스
+    strategies/         # JWT, Passport 전략 구현
+  records/              # 게임 기록/성과 관리
+    dto/                # 기록 생성 및 성과 관련 DTO
+    enum/               # Enum 정의
+    schema/             # 게임/난이도 DB 스키마
+    util/               # 유틸 함수 (reaction-scale)
+  users/                # 사용자 관리 모듈
+    dto/                # 사용자 관련 DTO
+    schema/             # 사용자 DB 스키마
+```
+
+- NestJS 기반 모듈화 설계
+- JWT 인증 / Refresh Token 관리
+- 사용자 계정 관리
+- 게임 기록 저장
+- 성과 분석 및 랭킹 계산
+- DTO, Schema, Enum, Util 등 구조화된 코드로 유지보수와 확장성 용이
+
+### 핵심 주제 & 목적
+
+- 인증 안전성 확보 & 상태 일관성 유지
+- 인지 데이터의 통계적 신뢰도 확보: 서버 중심 데이터 처리
+- 난이도별 변별력 있는 점수 설계
 
 ---
 
@@ -115,7 +166,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
   - `failedAttempts` 발생 시 감점을 부여
 
 - **최소 점수 보장**
-  - 0점 미만 방지 (`Math.max(0, ...)`)
+  - 음수 점수 방지 (`Math.max(0, ...)`)
 
 > 현재 가중치는 **실험적으로 설정**된 값이며,
 > 향후 A/B 테스트 및 축적된 사용자 데이터를 바탕으로
@@ -175,7 +226,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 | **멀티탭 동기화**    | `BroadcastChannel`을 통한 실시간 상태(State) 공유                       |
 | **초기 데이터 복구** | 새로고침 시 `localStorage`에서 토큰을 읽어 인증 복구 (`useRestoreUser`) |
 
-1. **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시값만 저장하여 DB 유출 피해 최소화
+1. **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시 값만 저장하여 DB 유출 시 피해를 최소화
 2. **Rotation 적용**: Refresh 요청 시마다 Access/Refresh 토큰을 모두 재발급하며 이전 토큰은 즉시 무효화
 3. **멀티탭 동기화**: `BroadcastChannel`을 활용해 한 탭에서 로그아웃/정보 수정 시 모든 탭에 즉시 반영
 
@@ -233,7 +284,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ### 3. GameDifficultyConfig (난이도 설정)
 
-각 게임의 난이도별 규칙 및 **집중도 점수 가중치**를 저장합니다.
+각 게임의 난이도별 규칙 및 **집중도 점수(Skill Score) 가중치**를 저장합니다.
 
 - `gameId`: 해당 게임 참조 (Ref: Game)
 - `difficulty`: 난이도 구분 (`EASY`, `NORMAL`, `HARD`)
@@ -265,7 +316,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## Frontend 성능 최적화
+## Frontend 성능 최적화 (Lighthouse)
 
 대시보드 페이지는 차트와 사용자 데이터를 동시에 렌더링하기 때문에
 초기 로딩과 렌더링 비용을 줄이기 위한 최적화 작업을 수행했습니다.
@@ -283,7 +334,7 @@ React SPA 구조에서 모든 페이지 코드가 초기 번들에 포함되면
 
 #### 해결
 
-페이지 단위 코드 분리를 위해 다음 구조를 적용했습니다.
+페이지 단위로 코드 분리를 적용했습니다.
 
 - `createBrowserRouter`
 - `React.lazy`
@@ -296,13 +347,11 @@ const Performance = lazy(() => import("../pages/Performance"));
 
 ---
 
-#### 결과
+#### 결과 (단위: 점)
 
-Preview Lighthouse 기준
-
-| Page | Before | After  |
-| ---- | ------ | ------ |
-| Main | 18+ 점 | 85+ 점 |
+| Page | Before (Dev) | After (Preview) |
+| ---- | ------------ | --------------- |
+| Main | 18+          | 85+             |
 
 초기 로딩 성능이 개선되었습니다.
 
@@ -355,23 +404,38 @@ manualChunks(id) {
 
 #### 해결
 
-차트 컴포넌트에 `React.memo`를 적용했습니다.
+A. 차트 컴포넌트에 `React.memo`를 적용하여 불필요한 재랜더링을 방지했습니다.
 
 ```tsx
 export const BaseLineChart = React.memo(function BaseLineChart(...)
 ```
 
-또한 차트 컨테이너 구조를 단순화했습니다.
+- 부모에서 `useMemo`를 사용해 배열/객체 props를 안정화
+
+```tsx
+// 최근 N회 집중도 추이
+const skillScoreTrendData = useMemo(
+  () => buildTrendData(recentRecords, "skillScore").reverse(),
+  [recentRecords],
+);
+```
+
+B. `ResponsiveContainer` 의존성 제거 후 CSS 기반 단순화했습니다.
+
+- 고정 높이(`height=250px`) + width 100% 대응
+- 동적 높이 조정이 필요한 경우 추후 CSS 대응 필요
+
+C. Line 애니메이션 비활성화
+
+- `isAnimationActive={false}` 적용으로 렌더링 비용 감소
 
 ---
 
-#### 결과
+#### 결과 (단위: 점)
 
-차트 렌더링 비용이 감소했습니다.
-
-| Page        | Before | After  |
-| ----------- | ------ | ------ |
-| Performance | 4 점   | 86+ 점 |
+| Page        | Before (Dev) | After (Preview) |
+| ----------- | ------------ | --------------- |
+| Performance | 4            | 86+             |
 
 ---
 
@@ -379,14 +443,15 @@ export const BaseLineChart = React.memo(function BaseLineChart(...)
 
 #### 문제
 
-프로필 이미지가 원본 해상도로 업로드될 경우
+게임 퍼즐 이미지와 프로필 이미지가 원본 해상도로 업로드될 경우
 표시 크기에 비해 파일 크기가 커질 수 있습니다.
 
 ---
 
 #### 해결
 
-이미지 업로드 시 다음과 같은 최적화 및 제한 사항을 적용했습니다.
+게임 퍼즐 이미지 WebP 변환하고
+프로필 이미지 업로드 시 다음과 같은 최적화 및 제한 사항을 적용했습니다.
 
 - WebP 변환
 - 이미지 해상도 제한
@@ -404,7 +469,7 @@ export const BaseLineChart = React.memo(function BaseLineChart(...)
 
 #### 문제
 
-Pretendard 폰트를 개별 폰트 파일로 사용할 경우  
+Pretendard 폰트를 개별 파일로 사용할 경우  
 여러 weight 파일이 로드되면서 네트워크 요청 수가 증가할 수 있습니다.
 
 #### 해결
@@ -419,7 +484,7 @@ Pretendard 폰트를 **Variable Font** 방식으로 변경하여
 
 ---
 
-## 접근성 및 SEO 개선
+### 6. 접근성 및 SEO 개선
 
 Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 
@@ -427,6 +492,25 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 - meta description 설정
 - robots.txt 추가
 - HTTPS 개발 환경 적용 (mkcert)
+
+### 7. 개선 점수 요약
+
+#### Lighthouse 성능 개선 결과 (단위: 점)
+
+| Page        | Before (Dev) | After (Preview) |
+| ----------- | ------------ | --------------- |
+| Main        | 18+          | **85+**         |
+| Game        | 31           | **86**          |
+| Performance | 4            | **86+**         |
+| Profile     | 35           | **89**          |
+
+#### 기타 지표 (단위: 점)
+
+| Category       | After (Preview) |
+| -------------- | --------------- |
+| Accessibility  | **92 ~ 95**     |
+| Best Practices | **96 ~ 100**    |
+| SEO            | **91+**         |
 
 ---
 
@@ -479,7 +563,7 @@ cd client && npm install && npm run dev
 
 ## 설계 인사이트
 
-> "측정은 게임이, 해석은 서버가"
+> "측정은 게임이, 해석은 서버가 담당합니다."
 
 본 프로젝트는 단순한 게임 구현을 넘어 사용자의 미세한 반응 데이터를 의미 있는 지표로 전환하는 것에 집중했습니다.
 
