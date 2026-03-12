@@ -1,22 +1,36 @@
-본 문서는 프로젝트의 **시스템 구조, 설계 의도, 데이터 모델, 성능 최적화 구현**을 설명합니다.
-
-# [← 메인으로 돌아가기](../README.md)
-
 # 카드 매칭 인지 훈련 & 성과 분석 시스템 (Full-Stack)
 
 > JWT 인증과 보안 설계를 기반으로
 > 사용자의 인지 반응 데이터를 신뢰 가능한 성과 지표로 분석하는
 > 카드 매칭 기반 인지 훈련 웹 애플리케이션
 
-이 프로젝트는 단순한 게임 플레이를 넘어, **반응 속도와 정확도 데이터를 수집하고, 난이도별 가중치 및 패널티를 적용한 '집중도 점수(Skill Score)' 알고리즘으로 분석**하는 것에 초점을 맞추고 있습니다.
+이 프로젝트는 단순한 게임 플레이를 넘어,
+**반응 속도와 정확도 데이터를 수집하고, 난이도별 가중치 및 패널티를 적용한 '집중도 점수(Skill Score)' 알고리즘으로 분석**하는 것에 초점을 맞추고 있습니다.
+
+**[← 'README'로 돌아가기](../README.md)**
 
 ---
 
-## 프로젝트 개요
+## 목차
 
-### 아키텍처
+- [Ⅰ. 프로젝트 개요](#ⅰ-프로젝트-개요)
+- [Ⅱ. 기술 스택](#ⅱ-기술-스택)
+- [Ⅲ. 인지 지표 및 분석 설계](#ⅲ-인지-지표-및-분석-설계)
+- [Ⅳ. 성과 분석 시스템](#ⅳ-성과-분석-시스템-dashboard)
+- [Ⅴ. 인증 / 보안 설계](#ⅴ-인증--보안-설계-jwt)
+- [Ⅵ. Database Schema](#ⅵ-database-schema-mongodb)
+- [Ⅶ. Frontend 성능 최적화](#ⅶ-frontend-성능-최적화-lighthouse)
+- [Ⅷ. E2E 테스트](#ⅷ-e2e-인증-테스트-시나리오-playwright)
+- [Ⅸ. 향후 개선 계획](#ⅸ-향후-개선-계획)
+- [Ⅹ. 설계 인사이트](#ⅹ-설계-인사이트)
 
-- 본 프로젝트는 **React SPA + NestJS API 서버 아키텍처**로 구성됩니다.
+---
+
+## Ⅰ. 프로젝트 개요
+
+### 1. 아키텍처
+
+- **React SPA + NestJS API 서버**
 
 ```
 React (Frontend)
@@ -25,12 +39,17 @@ React (Frontend)
    │
 NestJS API Server
    │
+   │ # 서버 중심 데이터 처리 — 데이터 신뢰성 확보
+   │
 MongoDB
 ```
 
-### 폴더 구조 및 역할
+### 2. 폴더 구조 및 역할
 
-- **Frontend (`client/`)**
+**▣ Frontend (`client/`)**
+
+<details>
+<summary>구조 보기</summary>
 
 ```
 client/                 # Frontend (React SPA)
@@ -53,15 +72,20 @@ client/                 # Frontend (React SPA)
     utils/              # 공통 유틸리티 함수
 ```
 
+</details>
+
+● 역할:
+
 - UI 컴포넌트
 - 게임 로직과 사용자 상호작용
 - 인증
 - 데이터 시각화
 - 테스트
 
----
+**▣ Backend (`server/src/`)**
 
-- **Backend (`server/src/`)**
+<details>
+<summary> 구조 보기</summary>
 
 ```
 server/src/             # Backend (NestJS API)
@@ -79,6 +103,10 @@ server/src/             # Backend (NestJS API)
     schema/             # 사용자 DB 스키마
 ```
 
+</details>
+
+● 역할:
+
 - NestJS 기반 모듈화 설계
 - JWT 인증 / Refresh Token 관리
 - 사용자 계정 관리
@@ -86,36 +114,36 @@ server/src/             # Backend (NestJS API)
 - 성과 분석 및 랭킹 계산
 - DTO, Schema, Enum, Util 등 구조화된 코드로 유지보수와 확장성 용이
 
-### 핵심 주제 & 목적
+### 3. 핵심 주제
 
-- 인증 안전성 확보 & 상태 일관성 유지
+- 인증 안전성 확보 & 상태 일관성
 - 인지 데이터의 통계적 신뢰도 확보: 서버 중심 데이터 처리
-- 난이도별 변별력 있는 점수 설계
+- 난이도별 변별력을 고려한 점수 설계
 
 ---
 
-## 기술 스택
+## Ⅱ. 기술 스택
 
-### Frontend (`client/`)
+### 1. Frontend (`client/`)
 
 - **Core**: React 19, TypeScript, Vite
 - **UI**: Tailwind CSS
 - **Network**: Axios (Interceptor 기반 인증 및 토큰 갱신)
 - **Visualization**: Recharts (데이터 추이 시각화)
 
-### Backend (`server/`)
+### 2. Backend (`server/`)
 
 - **Core**: Node.js 22, NestJS 11
 - **DB**: MongoDB + Mongoose
 - **Security**: Passport (JWT / Refresh), bcrypt, class-validator
 
-### 기타
+### 3. 기타
 
 - Playwright (E2E 인증 테스트)
 
 ---
 
-## 인지 지표 및 분석 설계
+## Ⅲ. 인지 지표 및 분석 설계
 
 ### 1. 집중도 점수(Skill Score) 산출
 
@@ -125,7 +153,10 @@ server/src/             # Backend (NestJS API)
   - 무작위 클릭 억제
   - 음수 점수 방지
 
-사용자의 인지 능력을 다각도로 평가하기 위해 반응 속도와 정확도를 결합한 복합 지표를 사용합니다.
+→ 사용자의 인지 능력을 다각도로 평가하기 위해 반응 속도와 정확도를 결합한 복합 지표를 사용합니다.
+
+<details>
+<summary>계산 방식 보기</summary>
 
 - **반응 점수(Reaction Score)**
 
@@ -145,9 +176,9 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 ```
 
 > 반응 속도가 빠를수록 높은 점수를, 느릴수록 낮은 점수를 부여하여
-> 난이도별 기준에 따라 상대적인 반응 성능을 비교할 수 있도록 설계하였습니다.
+> 난이도별 기준에 따라 상대적인 반응 성능을 비교할 수 있도록 설계했습니다.
 
-- **최종 집중도 점수 (Skill Score)**:
+- **최종 집중도 점수(Skill Score)**:
 
 ```text
   finalScore = (
@@ -168,6 +199,8 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 - **최소 점수 보장**
   - 음수 점수 방지 (`Math.max(0, ...)`)
 
+</details>
+
 > 현재 가중치는 **실험적으로 설정**된 값이며,
 > 향후 A/B 테스트 및 축적된 사용자 데이터를 바탕으로
 > 정교하게 조정할 수 있도록 유연하게 설계하였습니다.
@@ -181,7 +214,9 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## 성과 분석 시스템 (Dashboard)
+## Ⅳ. 성과 분석 시스템 (Dashboard)
+
+### 1. 주요 기능
 
 로그인 사용자 전용 기능이며, **모든 수치와 판정은 서버에서 계산**됩니다.
 
@@ -193,7 +228,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
   - **장기(5회 이상)**: 전반부/후반부 이동 평균 비교를 통한 추세(상승/유지/저하) 분석
 - **서버 사이드 판정**: 클라이언트의 가공 없이 서버에서 `GameDifficultyConfig`의 가중치를 적용한 최종 `progress` 객체를 전달하여 보안성과 일관성을 유지
 
-### 성과 분석 화면
+### 2. 성과 분석 화면
 
 <table>
 <tr>
@@ -216,7 +251,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## 인증 / 보안 설계 (JWT)
+## Ⅴ. 인증 / 보안 설계 (JWT)
 
 ### 1. Refresh Token 보안 전략 (Rotation)
 
@@ -226,9 +261,9 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 | **멀티탭 동기화**    | `BroadcastChannel`을 통한 실시간 상태(State) 공유                       |
 | **초기 데이터 복구** | 새로고침 시 `localStorage`에서 토큰을 읽어 인증 복구 (`useRestoreUser`) |
 
-1. **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시 값만 저장하여 DB 유출 시 피해를 최소화
-2. **Rotation 적용**: Refresh 요청 시마다 Access/Refresh 토큰을 모두 재발급하며 이전 토큰은 즉시 무효화
-3. **멀티탭 동기화**: `BroadcastChannel`을 활용해 한 탭에서 로그아웃/정보 수정 시 모든 탭에 즉시 반영
+- **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시 값만 저장하여 DB 유출 시 피해를 최소화
+- **Rotation 적용**: Refresh 요청 시마다 Access/Refresh 토큰을 모두 재발급하며 이전 토큰은 즉시 무효화
+- **멀티탭 동기화**: `BroadcastChannel`을 활용해 한 탭에서 로그아웃/정보 수정 시 모든 탭에 즉시 반영
 
 ### 2. 사용자 계정 관리
 
@@ -238,9 +273,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ### 3. 설계 의도
 
-#### 3.1 JWT + Rotation
-
-세션 기반 인증 대신 JWT를 선택한 이유:
+#### 3.1 JWT + Rotation: 세션 기반 인증 대신 JWT를 선택한 이유
 
 - 수평 확장 용이
 - API 서버 Stateless 유지
@@ -261,7 +294,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## Database Schema (MongoDB)
+## Ⅵ. Database Schema (MongoDB)
 
 ### 1. User (사용자)
 
@@ -300,7 +333,7 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 - `duration`: 게임 진행 시간
 - `skillScore`: 계산된 최종 집중도 점수
 - `avgReactionTime`, `accuracy`: 핵심 분석 데이터
-- `totalAttempts` `correctMatches` `failedAttempts`: 카드매칭 게임 전용 데이터
+- `totalAttempts` `correctMatches` `failedAttempts`: 카드 매칭 게임 전용 데이터
 - 확장 대비:
   - `reactionTimeDetails`: 개별 반응 시간 배열 (표준편차 분석용)
   - `stdDev`, `consistencyScore`: 인지 안정성, 일관성 지표
@@ -316,38 +349,32 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## Frontend 성능 최적화 (Lighthouse)
+## Ⅶ. Frontend 성능 최적화 (Lighthouse)
 
 대시보드 페이지는 차트와 사용자 데이터를 동시에 렌더링하기 때문에
 초기 로딩과 렌더링 비용을 줄이기 위한 최적화 작업을 수행했습니다.
 
----
-
 ### 1. Route 기반 Code Splitting
 
-#### 문제
+#### 1.1 문제
 
 React SPA 구조에서 모든 페이지 코드가 초기 번들에 포함되면
 초기 로딩 성능이 저하될 수 있습니다.
 
----
-
-#### 해결
+#### 1.2 해결
 
 페이지 단위로 코드 분리를 적용했습니다.
 
-- `createBrowserRouter`
-- `React.lazy`
+- `createBrowserRouter` 기반 라우팅
+- `React.lazy`를 활용한 코드 분할
 
-예시
+[예시]
 
 ```tsx
 const Performance = lazy(() => import("../pages/Performance"));
 ```
 
----
-
-#### 결과 (단위: 점)
+#### 1.3 결과 (단위: 점)
 
 | Page | Before (Dev) | After (Preview) |
 | ---- | ------------ | --------------- |
@@ -355,18 +382,14 @@ const Performance = lazy(() => import("../pages/Performance"));
 
 초기 로딩 성능이 개선되었습니다.
 
----
+### 2. 번들 분리 (Vite `manualChunks`)
 
-### 2. 번들 분리 (Vite manualChunks)
-
-#### 문제
+#### 2.1 문제
 
 차트 라이브러리(Recharts, D3)는 번들 크기가 큰 편이며
 React Router와 함께 번들에 포함될 경우 캐시 효율이 떨어질 수 있습니다.
 
----
-
-#### 해결
+#### 2.2 해결
 
 Vite `manualChunks` 설정을 통해 라이브러리를 분리했습니다.
 
@@ -384,33 +407,31 @@ manualChunks(id) {
 },
 ```
 
----
-
-#### 결과
+#### 2.3 결과
 
 - 공통 라이브러리 캐싱 효율 증가
 - 페이지 변경 시 재다운로드 감소
 
----
-
 ### 3. 차트 렌더링 최적화
 
-#### 문제
+#### 3.1 문제
 
 대시보드 페이지에서 여러 차트를 렌더링할 때
 데이터 변경 시 불필요한 재렌더링이 발생할 수 있습니다.
 
----
+#### 3.2 해결
 
-#### 해결
+ⓐ 차트 컴포넌트에 `React.memo`를 적용하여 불필요한 재렌더링을 방지했습니다.
 
-A. 차트 컴포넌트에 `React.memo`를 적용하여 불필요한 재랜더링을 방지했습니다.
+[예시]
 
 ```tsx
 export const BaseLineChart = React.memo(function BaseLineChart(...)
 ```
 
 - 부모에서 `useMemo`를 사용해 배열/객체 props를 안정화
+
+[예시]
 
 ```tsx
 // 최근 N회 집중도 추이
@@ -420,35 +441,29 @@ const skillScoreTrendData = useMemo(
 );
 ```
 
-B. `ResponsiveContainer` 의존성 제거 후 CSS 기반 단순화했습니다.
+ⓑ `ResponsiveContainer` 의존성 제거 후 CSS 기반 단순화했습니다.
 
 - 고정 높이(`height=250px`) + width 100% 대응
 - 동적 높이 조정이 필요한 경우 추후 CSS 대응 필요
 
-C. Line 애니메이션 비활성화
+ⓒ Rechart 애니메이션 비활성화
 
 - `isAnimationActive={false}` 적용으로 렌더링 비용 감소
 
----
-
-#### 결과 (단위: 점)
+#### 3.3 결과 (단위: 점)
 
 | Page        | Before (Dev) | After (Preview) |
 | ----------- | ------------ | --------------- |
 | Performance | 4            | 86+             |
 
----
-
 ### 4. 이미지 리소스 최적화
 
-#### 문제
+#### 4.1 문제
 
 게임 퍼즐 이미지와 프로필 이미지가 원본 해상도로 업로드될 경우
 표시 크기에 비해 파일 크기가 커질 수 있습니다.
 
----
-
-#### 해결
+#### 4.2 해결
 
 게임 퍼즐 이미지 WebP 변환하고
 프로필 이미지 업로드 시 다음과 같은 최적화 및 제한 사항을 적용했습니다.
@@ -457,32 +472,26 @@ C. Line 애니메이션 비활성화
 - 이미지 해상도 제한
 - 파일 용량 제한
 
----
-
-#### 결과
+#### 4.3 결과
 
 이미지 다운로드 크기가 감소했습니다.
 
----
-
 ### 5. 폰트 리소스 최적화
 
-#### 문제
+#### 5.1 문제
 
 Pretendard 폰트를 개별 파일로 사용할 경우  
 여러 weight 파일이 로드되면서 네트워크 요청 수가 증가할 수 있습니다.
 
-#### 해결
+#### 5.2 해결
 
 Pretendard 폰트를 **Variable Font** 방식으로 변경하여  
 단일 폰트 파일로 weight를 처리하도록 구성했습니다.
 
-#### 결과
+#### 5.3 결과
 
 - 폰트 파일 수 감소
 - 네트워크 요청 수 감소
-
----
 
 ### 6. 접근성 및 SEO 개선
 
@@ -495,7 +504,7 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 
 ### 7. 개선 점수 요약
 
-#### Lighthouse 성능 개선 결과 (단위: 점)
+#### 7.1 Lighthouse 성능 개선 결과 (단위: 점)
 
 | Page        | Before (Dev) | After (Preview) |
 | ----------- | ------------ | --------------- |
@@ -504,7 +513,9 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 | Performance | 4            | **86+**         |
 | Profile     | 35           | **89**          |
 
-#### 기타 지표 (단위: 점)
+→ 평균 Lighthouse Performance 약 **3~20배 개선**
+
+#### 7.2 기타 지표 (단위: 점)
 
 | Category       | After (Preview) |
 | -------------- | --------------- |
@@ -514,17 +525,14 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 
 ---
 
-## E2E 인증 테스트 시나리오 (Playwright)
+## Ⅷ. E2E 인증 테스트 시나리오 (Playwright)
 
 1. **인증 흐름**: 로그인 유지, 새로고침 시 세션 복구, 토큰 만료 시 자동 갱신 테스트
 2. **보안 경계**: 비로그인 시 성과 페이지 접근 차단 및 리다이렉트 검증
 3. **동기화**: 멀티탭 환경에서의 실시간 상태 공유 확인
 
----
-
-### 실행 방법
-
-#### 환경 변수 설정
+<details>
+<summary>환경 변수</summary>
 
 ```bash
 # server/.env
@@ -537,7 +545,10 @@ VITE_APP_API_URL=https://localhost:3000
 
 ```
 
-#### 설치 및 구동
+</details>
+
+<details>
+<summary>설치 및 구동</summary>
 
 ```bash
 # Backend
@@ -548,9 +559,11 @@ cd client && npm install && npm run dev
 
 ```
 
+</details>
+
 ---
 
-## 향후 개선 계획
+## Ⅸ. 향후 개선 계획
 
 - HttpOnly Cookie 기반 인증 전환
 - 배포 환경 구성
@@ -561,7 +574,7 @@ cd client && npm install && npm run dev
 
 ---
 
-## 설계 인사이트
+## Ⅹ. 설계 인사이트
 
 > "측정은 게임이, 해석은 서버가 담당합니다."
 
@@ -569,7 +582,7 @@ cd client && npm install && npm run dev
 
 - **데이터 무결성**: 모든 판정과 가공은 서버에서 수행하여 클라이언트 측의 조작 가능성을 차단했습니다.
 
-- **노이즈 제거**: 단순 이동 평균선 도입을 통해 일시적인 컨디션 난조로 인한 통계적 왜곡을 방지했습니다.
+- **노이즈 제거**: 단순 이동평균선 도입을 통해 일시적인 컨디션 난조로 인한 통계적 왜곡을 방지했습니다.
 
 - **복합 지표**: 단일 점수가 아닌 정확도와 속도를 결합한 'Skill Score'를 통해 다각적인 인지 평가를 구현했습니다.
 

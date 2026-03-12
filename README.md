@@ -1,4 +1,4 @@
-# React · NestJS 기반 학습 프로젝트: 인지 훈련 성과 분석 시스템
+# 인지 훈련 성과 분석 시스템 (Cognitive Training Analytics)
 
 **'React · NestJS 기반 풀스택 웹 애플리케이션'**
 
@@ -24,8 +24,6 @@
 - **JWT Access / Refresh Token** 기반 사용자 인증
 
 > 기술 구현의 상세 내용은 [TECH DETAILS](./docs/TECH-DETAILS.md)에서 확인할 수 있습니다.
-
----
 
 ### 아키텍처
 
@@ -67,8 +65,6 @@ client/                 # Frontend (React SPA)
     utils/              # 공통 유틸리티 함수
 ```
 
----
-
 - **Backend (`server/src/`)**
 
 ```
@@ -86,8 +82,6 @@ server/src/             # Backend (NestJS API)
     dto/                # 사용자 관련 DTO
     schema/             # 사용자 DB 스키마
 ```
-
----
 
 ### 핵심 구현 포인트
 
@@ -160,10 +154,14 @@ mkcert (Local HTTPS), JWT (Access/Refresh), Playwright (E2E), Lighthouse
 
 ## 성과 & 지표 (Lighthouse)
 
-- **Performance**: Main Page 18 → **85+**, Performance page 4 → **86+**
-- **접근성 & Best Practices**: **92+**, **96+**
-- 서버 사이드 판정으로 **데이터 신뢰성 확보**
-- 난이도별 가중치 및 페널티 적용, 변별력 있는 점수 제공
+- **Performance 개선**
+  - Main Page: **18 → 85+**
+  - Performance Page: **4 → 86+**
+
+- **Accessibility / Best Practices**
+  - **92+ / 96+**
+
+→ SPA 구조에서 **번들 분리 및 렌더링 최적화를 통해 평균 4~20배 성능 개선**
 
 ---
 
