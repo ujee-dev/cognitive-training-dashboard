@@ -133,7 +133,7 @@ export function Performance() {
       <div className="px-4 space-x-5 text-sm">
         {/* 1. 라벨을 만들고 htmlFor를 지정합니다. */}
         <label htmlFor="difficulty-select" className="font-semibold">
-          난이도 선택를 선택하세요. 
+          난이도를 선택하세요. 
         </label>{" "}
 
         {/* 2. select 태그에 동일한 id를 부여합니다. */}
