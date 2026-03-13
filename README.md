@@ -8,6 +8,15 @@
 
 ---
 
+🚧 **현재 프로젝트 고도화 진행 중**
+
+**Backend Migration:** `NestJS → Java Spring Boot 3`
+
+상세 작업 내역과 코드는  
+`feature/migration-to-spring` 브랜치에서 확인하실 수 있습니다.
+
+---
+
 ## 프로젝트 개요
 
 ### 목적
