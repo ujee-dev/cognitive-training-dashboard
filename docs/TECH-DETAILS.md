@@ -82,13 +82,13 @@ client/                 # Frontend (React SPA)
 - 데이터 시각화
 - 테스트
 
-**▣ Backend (`server/src/`)**
+**▣ Backend (`backend-nest/src/`)**
 
 <details>
 <summary> 구조 보기</summary>
 
 ```
-server/src/             # Backend (NestJS API)
+backend-nest/src/             # Backend (NestJS API)
   auth/                 # 인증 모듈
     dto/                # 데이터 전송 객체 정의
     interfaces/         # 타입/인터페이스
@@ -131,7 +131,7 @@ server/src/             # Backend (NestJS API)
 - **Network**: Axios (Interceptor 기반 인증 및 토큰 갱신)
 - **Visualization**: Recharts (데이터 추이 시각화)
 
-### 2. Backend (`server/`)
+### 2. Backend (`backend-nest/`)
 
 - **Core**: Node.js 22, NestJS 11
 - **DB**: MongoDB + Mongoose

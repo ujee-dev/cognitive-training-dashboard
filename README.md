@@ -74,10 +74,10 @@ client/                 # Frontend (React SPA)
     utils/              # 공통 유틸리티 함수
 ```
 
-- **Backend (`server/src/`)**
+- **Backend (`backend-nest/src/`)**
 
 ```
-server/src/             # Backend (NestJS API)
+backend-nest/src/             # Backend (NestJS API)
   auth/                 # 인증 모듈
     dto/                # 데이터 전송 객체 정의
     interfaces/         # 타입/인터페이스
