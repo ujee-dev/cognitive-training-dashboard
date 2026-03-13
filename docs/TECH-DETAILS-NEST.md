@@ -52,24 +52,26 @@ MongoDB
 <summary>구조 보기</summary>
 
 ```
+
 client/                 # Frontend (React SPA)
-  e2e/                  # Playwright 기반 E2E 테스트
-  src/
-    api/                # Axios 등 API 호출 관련 모듈
-    assets/             # 이미지, 폰트 리소스
-    auth/               # 인증 관련 훅/컴포넌트
-    components/         # UI 구성 요소
-      charts/           # Recharts 컴포넌트
-      game/             # 게임 관련 UI 컴포넌트
-      layout/           # 레이아웃 관련 컴포넌트(App, Header 등)
-      ui/               # 공통 UI 요소(Button, Card, Spinner 등)
-    config/             # 환경 설정 (게임 설정)
-    pages/              # 라우트 페이지 컴포넌트
-    hooks/              # 게임 로직, 타이머 훅
-    routes/             # createBrowserRouter 기반 라우팅
-    types/              # TypeScript 타입 정의
-    ui/                 # UI 스타일/테마
-    utils/              # 공통 유틸리티 함수
+ ├── e2e/               # Playwright 기반 E2E 테스트
+ └── src/
+      ├── api/          # Axios 등 API 호출 관련 모듈
+      ├── assets/       # 이미지, 폰트 리소스
+      ├── auth/         # 인증 관련 훅/컴포넌트
+      ├── components/   # 재사용 UI 구성 요소
+      │    ├── charts/  # Recharts 컴포넌트
+      │    ├── game/    # 게임 관련 UI 컴포넌트
+      │    ├── layout/  # 레이아웃 관련 컴포넌트(App, Header 등)
+      │    └── ui/      # 공통 UI 요소(Button, Card, Spinner 등)
+      ├── config/       # 환경 설정 (게임 설정)
+      ├── pages/        # 라우트 페이지 컴포넌트
+      ├── hooks/        # 게임 로직, 타이머 훅
+      ├── routes/       # createBrowserRouter 기반 라우팅
+      ├── types/        # TypeScript 타입 정의
+      ├── ui/           # UI 스타일/테마 (재사용 UI와 별도)
+      └── utils/        # 공통 유틸리티 함수
+
 ```
 
 </details>
@@ -88,19 +90,11 @@ client/                 # Frontend (React SPA)
 <summary> 구조 보기</summary>
 
 ```
-backend-nest/src/             # Backend (NestJS API)
-  auth/                 # 인증 모듈
-    dto/                # 데이터 전송 객체 정의
-    interfaces/         # 타입/인터페이스
-    strategies/         # JWT, Passport 전략 구현
-  records/              # 게임 기록/성과 관리
-    dto/                # 기록 생성 및 성과 관련 DTO
-    enum/               # Enum 정의
-    schema/             # 게임/난이도 DB 스키마
-    util/               # 유틸 함수 (reaction-scale)
-  users/                # 사용자 관리 모듈
-    dto/                # 사용자 관련 DTO
-    schema/             # 사용자 DB 스키마
+backend-nest/src/     # Backend (NestJS API)
+  ├── auth/           # 인증 모듈 (DTO, 인터페이스, 전략)
+  ├── records/        # 게임 기록/성과 관리 (DTO, Enum, Schema, util)
+  └── users/          # 사용자 관리 모듈 (DTO, Schema)
+
 ```
 
 </details>
@@ -376,9 +370,9 @@ const Performance = lazy(() => import("../pages/Performance"));
 
 #### 1.3 결과 (단위: 점)
 
-| Page | Before (Dev) | After (Preview) |
-| ---- | ------------ | --------------- |
-| Main | 18+          | 85+             |
+| Page     | Before (Dev) | After (Preview) |
+| -------- | ------------ | --------------- |
+| Home (/) | 18+          | 85+             |
 
 초기 로딩 성능이 개선되었습니다.
 
@@ -508,7 +502,7 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 
 | Page        | Before (Dev) | After (Preview) |
 | ----------- | ------------ | --------------- |
-| Main        | 18+          | **85+**         |
+| Home (/)    | 18+          | **85+**         |
 | Game        | 31           | **86**          |
 | Performance | 4            | **86+**         |
 | Profile     | 35           | **89**          |
@@ -535,7 +529,7 @@ Lighthouse 지표 개선을 위해 다음 작업을 적용했습니다.
 <summary>환경 변수</summary>
 
 ```bash
-# server/.env
+# backend-nest/.env
 MONGO_URI=mongodb://localhost:27017/cognitive-app
 JWT_SECRET=your_access_secret
 JWT_REFRESH_SECRET=your_refresh_secret
@@ -552,7 +546,7 @@ VITE_APP_API_URL=https://localhost:3000
 
 ```bash
 # Backend
-cd server && npm install && npm run start:dev
+cd backend-nest && npm install && npm run start:dev
 
 # Frontend
 cd client && npm install && npm run dev

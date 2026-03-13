@@ -12,8 +12,7 @@
 
 **Backend Migration:** `NestJS → Java Spring Boot 3`
 
-상세 작업 내역과 코드는  
-`feature/migration-to-spring` 브랜치에서 확인하실 수 있습니다.
+- Spring 기반 백엔드 재설계 및 마이그레이션이 진행 중입니다.
 
 ---
 
@@ -32,21 +31,23 @@
   - 실시간 랭킹 및 성장(성과) 그래프 제공
 - **JWT Access / Refresh Token** 기반 사용자 인증
 
-> 기술 구현의 상세 내용은 [TECH DETAILS](./docs/TECH-DETAILS.md)에서 확인할 수 있습니다.
+기술 구현의 상세 내용은 아래 문서에서 확인할 수 있습니다.
+
+- NestJS 기반 기술 문서 → **[NestJS 기술 명세서](./docs/TECH-DETAILS-NEST.md)**
+
+- Spring Boot 기반 재설계 문서 → **[Spring Boot 기술 명세서](./docs/TECH-DETAILS-SPRING.md)**
 
 ### 아키텍처
 
-- **React SPA + NestJS REST API 서버**
+- **Legacy:** React SPA + NestJS + MongoDB
+- **Target:** React SPA + Spring Boot 3 + PostgreSQL
 
-```
-React SPA (Frontend)
-   │
-   │ Axios (Interceptor)
-   │
-NestJS API Server
-   │
-MongoDB (Mongoose)
-
+```mermaid
+graph TD
+    Client[React SPA] -->|Axios| NestJS[backend-nest: NestJS]
+    Client -.->|Migration underway| SpringBoot[backend-spring: Spring Boot 3]
+    NestJS --> MongoDB[(MongoDB)]
+    SpringBoot --> PostgreSQL[(PostgreSQL)]
 ```
 
 ### 폴더 구조
@@ -54,42 +55,36 @@ MongoDB (Mongoose)
 - **Frontend (`client/`)**
 
 ```
+
 client/                 # Frontend (React SPA)
-  e2e/                  # Playwright 기반 E2E 테스트
-  src/
-    api/                # Axios 등 API 호출 관련 모듈
-    assets/             # 이미지, 폰트 리소스
-    auth/               # 인증 관련 훅/컴포넌트
-    components/         # UI 구성 요소
-      charts/           # Recharts 컴포넌트
-      game/             # 게임 관련 UI 컴포넌트
-      layout/           # 레이아웃 관련 컴포넌트(App, Header 등)
-      ui/               # 공통 UI 요소(Button, Card, Spinner 등)
-    config/             # 환경 설정 (게임 설정)
-    pages/              # 라우트 페이지 컴포넌트
-    hooks/              # 게임 로직, 타이머 훅
-    routes/             # createBrowserRouter 기반 라우팅
-    types/              # TypeScript 타입 정의
-    ui/                 # UI 스타일/테마
-    utils/              # 공통 유틸리티 함수
-```
-
-- **Backend (`backend-nest/src/`)**
+ ├── e2e/               # Playwright 기반 E2E 테스트
+ └── src/
+      ├── api/          # Axios 등 API 호출 관련 모듈
+      ├── assets/       # 이미지, 폰트 리소스
+      ├── auth/         # 인증 관련 훅/컴포넌트
+      ├── components/   # 재사용 UI 구성 요소
+      │    ├── charts/  # Recharts 컴포넌트
+      │    ├── game/    # 게임 관련 UI 컴포넌트
+      │    ├── layout/  # 레이아웃 관련 컴포넌트(App, Header 등)
+      │    └── ui/      # 공통 UI 요소(Button, Card, Spinner 등)
+      ├── config/       # 환경 설정 (게임 설정)
+      ├── pages/        # 라우트 페이지 컴포넌트
+      ├── hooks/        # 게임 로직, 타이머 훅
+      ├── routes/       # createBrowserRouter 기반 라우팅
+      ├── types/        # TypeScript 타입 정의
+      ├── ui/           # UI 스타일/테마 (재사용 UI와 별도)
+      └── utils/        # 공통 유틸리티 함수
 
 ```
-backend-nest/src/             # Backend (NestJS API)
-  auth/                 # 인증 모듈
-    dto/                # 데이터 전송 객체 정의
-    interfaces/         # 타입/인터페이스
-    strategies/         # JWT, Passport 전략 구현
-  records/              # 게임 기록/성과 관리
-    dto/                # 기록 생성 및 성과 관련 DTO
-    enum/               # Enum 정의
-    schema/             # 게임/난이도 DB 스키마
-    util/               # 유틸 함수 (reaction-scale)
-  users/                # 사용자 관리 모듈
-    dto/                # 사용자 관련 DTO
-    schema/             # 사용자 DB 스키마
+
+- **Backend (Legacy: `backend-nest/src/`)**
+
+```
+backend-nest/src/   # Backend (NestJS API)
+ ├── auth/          # 인증 모듈 (DTO, 인터페이스, 전략)
+ ├── records/       # 게임 기록/성과 관리 (DTO, Enum, Schema, util)
+ └── users/         # 사용자 관리 모듈 (DTO, Schema)
+
 ```
 
 ### 핵심 구현 포인트
@@ -151,9 +146,13 @@ backend-nest/src/             # Backend (NestJS API)
 
 React 19, TypeScript, Vite, Tailwind CSS, Recharts, Axios, React Router
 
-### Backend
+### Backend (Legacy)
 
 Node.js 22, NestJS 11, MongoDB, Mongoose, Passport (JWT / Refresh Token), bcrypt, class-validator
+
+### Backend (Migration Target)
+
+Java 17, Spring Boot 3, PostgreSQL, Spring Security
 
 ### DevOps/Auth/Test
 
@@ -161,10 +160,10 @@ mkcert (Local HTTPS), JWT (Access/Refresh), Playwright (E2E), Lighthouse
 
 ---
 
-## 성과 & 지표 (Lighthouse)
+## 성과 & 지표 (Frontend: NestJS / Legacy)
 
 - **Performance 개선**
-  - Main Page: **18 → 85+**
+  - Home (/) Page: **18 → 85+**
   - Performance Page: **4 → 86+**
 
 - **Accessibility / Best Practices**
@@ -176,10 +175,16 @@ mkcert (Local HTTPS), JWT (Access/Refresh), Playwright (E2E), Lighthouse
 
 ## 프로젝트 문서
 
-보다 상세한 기술 구현 내용, 성과 산출 알고리즘, 성능 최적화 과정은  
+보다 상세한 기술 구현 내용, 성과 산출 알고리즘, 성능 최적화 과정은
 아래 문서에서 확인할 수 있습니다.
 
-[ [TECH DETAILS](./docs/TECH-DETAILS.md) ] `docs/TECH-DETAILS.md`
+### 🟢 Legacy (Stable)
+
+- **[NestJS 기술 명세서](./docs/TECH-DETAILS-NEST.md)**: 기존 NestJS 기반 API 설계, MongoDB 스키마, 성능 최적화(Lighthouse) 기록
+
+### 🔵 Migration (In Progress)
+
+- **[Spring Boot 기술 명세서](./docs/TECH-DETAILS-SPRING.md)**: Java 17, Spring Boot 3 도입 배경, PostgreSQL 엔티티 설계 및 마이그레이션 전략 (진행 중)
 
 ---
 
