@@ -38,4 +38,4 @@ logging:
 
 # 사용자 정의 경로 설정
 file:
-  upload-dir: ./uploads/profiles
+  upload-dir: uploads/profiles
