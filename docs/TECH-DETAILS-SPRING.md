@@ -1,5 +1,9 @@
 # 🔵 Spring Boot 기술 명세서 (Backend Migration)
 
+### Backend Migration Stack
+
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+
 본 문서는 **NestJS (MongoDB)** 기반으로 구축된 인지 훈련 성과 분석 시스템을
 **Spring Boot 3 (Java 17) + PostgreSQL** 환경으로 마이그레이션하면서 적용한
 **아키텍처 설계와 주요 기술 구현 과정**을 정리한 기술 문서입니다.
@@ -11,8 +15,7 @@
 
 > **Legacy 시스템 설계 문서**
 
-기존 NestJS 기반 시스템의
-**상세 설계, 점수 계산 방식, 화면, 성능 최적화(lighthouse)** 등의
+기존 NestJS 기반 시스템의 **상세 설계, 점수 계산 방식, 화면, 성능 최적화(lighthouse)** 등의
 서비스 기능 설계에 대한 상세 내용은 아래 Legacy 기술 문서를 참고할 수 있습니다.
 
 해당 문서는 **본 Spring Boot 마이그레이션 문서의 기반 시스템 설계 참고 자료**입니다.

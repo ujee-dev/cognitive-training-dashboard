@@ -1,4 +1,8 @@
-# 카드 매칭 인지 훈련 & 성과 분석 시스템 (Full-Stack)
+# 🟢 카드 매칭 인지 훈련 & 성과 분석 시스템 (Full-Stack)
+
+### Legacy Backend Stack
+
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 
 > JWT 인증과 보안 설계를 기반으로
 > 사용자의 인지 반응 데이터를 신뢰 가능한 성과 지표로 분석하는

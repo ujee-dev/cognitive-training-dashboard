@@ -1,5 +1,9 @@
 # Cognitive Training Analytics
 
+### Total Tech Stack
+
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white) ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+
 **React · NestJS · Spring Boot 기반 인지 훈련 데이터 분석 웹 애플리케이션**
 
 카드 매칭 게임에서 발생하는 **사용자 반응 데이터를 수집하고 분석하여 인지 성과를 시각화하는 풀스택 프로젝트**입니다.
@@ -33,7 +37,7 @@ D --> E
 
 ---
 
-# 핵심 특징
+# Key Features
 
 ### Backend Migration
 
@@ -124,41 +128,23 @@ D --> E
 
 ---
 
-# 기술 스택
+# 기술 스택 (Tech Stack)
 
-### Frontend
+| 구분                | 사용 기술                             | 역할 및 목적                               |
+| ------------------- | ------------------------------------- | ------------------------------------------ |
+| **프론트엔드**      | React 19, TypeScript, Tailwind CSS    | SPA 기반 UI 구현 및 컴포넌트 구조 설계     |
+| **백엔드 (New)**    | Spring Boot 3.5, JPA, Spring Security | 시스템 마이그레이션 및 인증/보안 로직 구현 |
+| **백엔드 (Legacy)** | NestJS, Node.js                       | 기존 서비스 운영 및 API 구조 분석          |
+| **데이터베이스**    | PostgreSQL, MongoDB                   | 서비스 데이터 및 통계 데이터 저장          |
 
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS
-- Recharts
+#### 개발 도구 (Tools)
 
----
-
-### Backend
-
-**Spring Boot 3.5**
-
-- Java 17
-- Spring Security
-- Spring Data JPA
-- PostgreSQL
-
-**NestJS (Legacy)**
-
-- Node.js
-- NestJS
-- MongoDB
-- Mongoose
-
----
-
-### Dev / Tools
-
-- JWT
-- Playwright (E2E Test)
-- Lighthouse
+| 구분              | 사용 기술            | 상세 용도                                   |
+| ----------------- | -------------------- | ------------------------------------------- |
+| **인증**          | JWT, HttpOnly Cookie | 보안을 고려한 이중 토큰 기반 인증 구조 적용 |
+| **분석/최적화**   | Recharts, Lighthouse | 데이터 시각화 및 웹 성능 지표(LCP) 개선     |
+| **테스트**        | Playwright           | E2E 테스트를 통한 주요 비즈니스 기능 검증   |
+| **협업/버전관리** | Git, GitHub          | 브랜치 전략 기반 협업 및 코드 관리          |
 
 ---
 
