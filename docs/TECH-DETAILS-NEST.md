@@ -245,46 +245,41 @@ return Math.max(scale.minScore ?? 0, Math.round(raw));
 
 ---
 
-## Ⅴ. 인증 / 보안 설계 (JWT)
+## Ⅴ. 인증 및 보안 설계 (JWT)
 
-### 1. Refresh Token 보안 전략 (Rotation)
+### 1. 토큰 관리 및 보안 전략
 
-| 구분                 | 방식                                                                    |
-| -------------------- | ----------------------------------------------------------------------- |
-| **Access Token**     | JWT, `localStorage`에 저장 (인증 유지용)                                |
-| **멀티탭 동기화**    | `BroadcastChannel`을 통한 실시간 상태(State) 공유                       |
-| **초기 데이터 복구** | 새로고침 시 `localStorage`에서 토큰을 읽어 인증 복구 (`useRestoreUser`) |
+| 구분              | 관리 방식 및 기술 스택                    | 비고                                    |
+| ----------------- | ----------------------------------------- | --------------------------------------- |
+| **Access Token**  | JWT 기반, Client `localStorage` 저장      | 유효기간 단축을 통한 탈취 리스크 최소화 |
+| **Refresh Token** | **Server-side `HttpOnly Cookie` 저장**    | **XSS 및 CSRF 공격 방어 최적화**        |
+| **상태 복구**     | `useRestoreUser` 훅을 통한 인증 상태 유지 | 새로고침 시 유저 정보 및 토큰 복구      |
+| **멀티탭 동기화** | `BroadcastChannel` API 활용               | 탭 간 실시간 로그아웃/상태 변경 공유    |
 
-- **DB 해시 저장**: 토큰 원본이 아닌 bcrypt 해시 값만 저장하여 DB 유출 시 피해를 최소화
-- **Rotation 적용**: Refresh 요청 시마다 Access/Refresh 토큰을 모두 재발급하며 이전 토큰은 즉시 무효화
-- **멀티탭 동기화**: `BroadcastChannel`을 활용해 한 탭에서 로그아웃/정보 수정 시 모든 탭에 즉시 반영
+### 2. 보안 강화 메커니즘
 
-### 2. 사용자 계정 관리
+- **Refresh Token Rotation (RTR):** 토큰 재발급 시 Access/Refresh 토큰을 모두 갱신하며, 사용된 이전 토큰은 즉시 무효화하여 재사용 공격(Replay Attack) 방지
+- **DB 해시 보안:** DB 내 Refresh Token은 원본이 아닌 `bcrypt` 해시값으로 저장하여 데이터베이스 유출 시에도 토큰 탈취 방어
+- **계정 관리 프로세스:** \* **정보 수정:** 유효한 Access Token 인증을 거쳐 전역 상태에 즉시 반영
+- **비밀번호 변경/탈퇴:** 기존 비밀번호 재검증 절차를 필수로 수행하며, 탈퇴 시 관련 토큰 및 세션 즉시 파기
 
-- **회원정보 수정**: Access Token 인증 필요, 전역 상태 즉시 갱신
-- **비밀번호 변경**: 기존 비밀번호 검증 필수, 필요 시 세션 무효화
-- **회원 탈퇴**: 비밀번호 재확인, 계정 및 토큰 삭제, 모든 세션 로그아웃
+### 3. 설계 의도 (Design Decisions)
 
-### 3. 설계 의도
+#### 3.1 세션 대비 JWT 방식의 이점
 
-#### 3.1 JWT + Rotation: 세션 기반 인증 대신 JWT를 선택한 이유
+- **서버 무상태성(Stateless):** 별도의 세션 저장소 없이 토큰 자체로 인증을 수행하여 서버 부하 경감
+- **확장성(Scalability):** API 서버 증설 시 세션 동기화 문제없이 수평 확장 용이
+- **플랫폼 유연성:** 웹뿐만 아니라 모바일 앱 및 다양한 외부 서비스와의 통합 인증 고려
 
-- 수평 확장 용이
-- API 서버 Stateless 유지
-- 모바일/SPA 확장 고려
+#### 3.2 Refresh Token Rotation 도입 이유
 
-#### 3.2 Refresh Token Rotation
+- **탈취 시나리오 대응:** 유효기간이 긴 Refresh Token이 탈취되더라도, 한 번이라도 사용되는 순간 기존 토큰이 무효화되어 피해 범위 제한
+- **실시간 무효화:** 유저가 비밀번호를 변경하거나 로그아웃할 경우 서버 측에서 즉각적인 토큰 만료 처리 가능
 
-- Refresh Token 탈취 시 재사용 공격 방지
-- 토큰 재발급 시 이전 토큰 즉시 무효화
+#### 3.3 저장 전략의 이원화 (Security Optimized)
 
-#### 3.3 Access Token localStorage 저장 이유
-
-- 명시적 토큰 갱신 제어 가능
-- Axios Interceptor 기반 인증 흐름 단순화
-- 멀티탭 상태 동기화 용이
-
-> 참고: 향후 HttpOnly Cookie 기반 인증으로 전환 예정
+- **Access Token (localStorage):** 클라이언트 측의 명시적인 토큰 갱신 제어 및 Axios Interceptor와의 유연한 통합을 위해 선택
+- **Refresh Token (HttpOnly Cookie):** 자바스크립트를 이용한 접근을 원천 차단하여 XSS 공격으로부터 보안성 확보. `SameSite(Strict)` 설정을 적용하여 CSRF 공격에 대한 방어 계층 추가
 
 ---
 
@@ -559,7 +554,6 @@ cd client && npm install && npm run dev
 
 ## Ⅸ. 향후 개선 계획
 
-- HttpOnly Cookie 기반 인증 전환
 - 배포 환경 구성
 - k6 성능 테스트 수행
 - 테스트 확장 (과부하, 더미 데이터)
